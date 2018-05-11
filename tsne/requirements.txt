@@ -1,0 +1,11 @@
+jupyter
+simplejson
+matplotlib
+scikit-learn
+Pillow
+tqdm
+keras
+git+https://github.com/Quasimondo/RasterFairy
+tensorflow
+h5py==2.8.0rc1
+unittest2
