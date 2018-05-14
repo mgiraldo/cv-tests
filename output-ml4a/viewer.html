@@ -14,11 +14,34 @@
     }
 
     .hover {
-      position: absolute;
+      background-color: white;
       left: 0;
+      padding: 10px;
+      min-width: 250px;
+      max-width: 45%;
+      position: fixed;
       top: 0;
-      max-width: 500px;
-      max-height: 500px;
+    }
+
+    .hover img {
+      width: 100%;
+    }
+
+    .hover ul {
+      line-height: 0;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      width: 400px;
+    }
+
+    .hover li {
+      display: inline-block;
+      height: 50px;
+    }
+
+    .hidden {
+      display: none;
     }
   </style>
 </head>
@@ -36,8 +59,17 @@
     var last_row = -1;
     var last_col = -1;
     var points, imagexy = {};
-    var hover = new Image();
-    hover.classList.add("hover")
+    var hover = document.createElement("div");
+    var img = new Image();
+    hover.appendChild(img);
+    var palette = document.createElement("ul");
+    palette.appendChild(document.createElement("li"))
+    palette.appendChild(document.createElement("li"))
+    palette.appendChild(document.createElement("li"))
+    palette.appendChild(document.createElement("li"))
+    palette.appendChild(document.createElement("li"))
+    hover.appendChild(palette);
+    hover.classList.add("hover", "hidden")
     grid.appendChild(hover);
     var xmlhttp = new XMLHttpRequest(),
       method = 'GET',
@@ -47,32 +79,48 @@
     xmlhttp.onload = function (data) {
       points = JSON.parse(data.target.response)
       points.forEach(p => {
-        imagexy[p.point[0] + "" + p.point[1]] = p.path
+        imagexy[p.point[0] + "," + p.point[1]] = p.path
       })
       init();
     };
     xmlhttp.send()
     function init() {
+      grid.addEventListener("mouseout", function (e) {
+        hover.classList.add("hidden")
+      })
       grid.addEventListener("mousemove", function (e) {
+        hover.classList.remove("hidden")
         var nx = e.layerX / grid.clientWidth;
         var ny = e.layerY / grid.clientHeight;
         var row = Math.floor(ny * rows)
         var col = Math.floor(nx * columns)
+        var url, colorurl;
         if (row != last_row || col != last_col) {
           last_col = col;
           last_row = row;
-          hover.src = imagexy[col + "" + row].replace("/Users/mga/Documents/website/cv", "");
-          console.log(imagexy[col + "" + row])
+          url = imagexy[col + "," + row].replace("/Users/mga/Documents/website/cv", "");
+          img.src = url
+          colorurl = "/output-colors" + url.replace("/images/scaled", "").replace(".jpg", ".json")
+          loadColors(colorurl)
+          console.log(col, row, imagexy[col + "," + row])
         }
-        var w = hover.width ? hover.width : 0;
-        var h = hover.height ? hover.height : 0;
-        var x = e.layerX - (w / 2);
-        var y = e.layerY - h - 20;
-        if (x < 0) x = 0;
-        if (x + w > grid.clientWidth) x = grid.clientWidth - w;
-        if (y < 0) y = e.layerY + 20;
-        hover.setAttribute("style", "left: " + x + "px; top: " + y + "px;");
+        var left = col > columns * .5 ? 0 : "auto";
+        var right = col < columns * .5 ? 0 : "auto";
+        hover.setAttribute("style", "left: " + left + "; right: " + right + ";");
       })
+    }
+    function loadColors(file) {
+      var xmlhttp = new XMLHttpRequest(),
+        method = 'GET',
+        url = file;
+
+      xmlhttp.open(method, url, true);
+      xmlhttp.onload = function (data) {
+        JSON.parse(data.target.response).imgdata[1].clusters.cluster.forEach((c, index) => {
+          hover.getElementsByTagName("li")[index].setAttribute("style", "width: " + (c[0].f * 100) + "%; background-color: " + c[2].hex[0].hex + ";")
+        })
+      };
+      xmlhttp.send()
     }
   </script>
 
