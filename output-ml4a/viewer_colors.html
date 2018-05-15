@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>colors viewer</title>
+
+  <link rel="stylesheet" href="viewer.css" />
+
+</head>
+
+<body>
+
+  <div id="grid">
+    <img class="base" src="colors-v2-tSNE-grid.jpg" />
+  </div>
+
+  <script type="text/javascript">
+    var grid = document.getElementById("grid")
+    var columns = 53
+    var rows = 43
+    var last_row = -1;
+    var last_col = -1;
+    var points, imagexy = {};
+    var hover = document.createElement("div");
+    var img = new Image();
+    hover.appendChild(img);
+    var palette = document.createElement("ul");
+    palette.appendChild(document.createElement("li"))
+    palette.appendChild(document.createElement("li"))
+    palette.appendChild(document.createElement("li"))
+    palette.appendChild(document.createElement("li"))
+    palette.appendChild(document.createElement("li"))
+    hover.appendChild(palette);
+    hover.classList.add("hover", "hidden")
+    grid.appendChild(hover);
+    var xmlhttp = new XMLHttpRequest(),
+      method = 'GET',
+      url = './colors-v2-tSNE-grid-points.json';
+
+    xmlhttp.open(method, url, true);
+    xmlhttp.onload = function (data) {
+      points = JSON.parse(data.target.response)
+      points.forEach(p => {
+        imagexy[p.point[0] + "," + p.point[1]] = p.path
+      })
+      init();
+    };
+    xmlhttp.send()
+    function init() {
+      grid.addEventListener("mouseout", function (e) {
+        hover.classList.add("hidden")
+      })
+      grid.addEventListener("mousemove", function (e) {
+        hover.classList.remove("hidden")
+        var nx = e.layerX / grid.clientWidth;
+        var ny = e.layerY / grid.clientHeight;
+        var row = Math.floor(ny * rows)
+        var col = Math.floor(nx * columns)
+        var url, colorurl;
+        if (row != last_row || col != last_col) {
+          last_col = col;
+          last_row = row;
+          url = imagexy[col + "," + row].replace("/Users/mga/Documents/website/cv", "");
+          img.src = url.replace("/output-colors", "/images/scaled").replace(".json", ".jpg")
+          colorurl = url
+          loadColors(colorurl)
+          console.log(col, row, imagexy[col + "," + row])
+        }
+        hover.classList.remove("left", "right");
+        if (col > columns * .5) hover.classList.add("left");
+        if (col < columns * .5) hover.classList.add("right");
+      })
+    }
+    function loadColors(file) {
+      var xmlhttp = new XMLHttpRequest(),
+        method = 'GET',
+        url = file;
+
+      xmlhttp.open(method, url, true);
+      xmlhttp.onload = function (data) {
+        JSON.parse(data.target.response).imgdata[1].clusters.cluster.forEach((c, index) => {
+          hover.getElementsByTagName("li")[index].setAttribute("style", "width: " + (c[0].f * 100) + "%; background-color: " + c[2].hex[0].hex + ";")
+        })
+      };
+      xmlhttp.send()
+    }
+  </script>
+
+</body>
+
+</html>

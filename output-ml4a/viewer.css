@@ -1,0 +1,61 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 1rem;
+}
+
+#grid {
+  position: relative;
+}
+
+.base {
+  width: 100%;
+}
+
+.hover {
+  background-color: white;
+  left: 0;
+  padding: 1rem 0 1rem 0;
+  min-width: 250px;
+  max-width: 45%;
+  position: fixed;
+  top: 0;
+  left: auto;
+  right: auto;
+}
+
+.left {
+  left: 1rem;
+  padding: 1rem 1rem 1rem 0;
+  right: auto;
+}
+
+.right {
+  left: auto;
+  padding: 1rem 0 1rem 1rem;
+  right: 1rem;
+}
+
+.hover img {
+  display: block;
+  line-height: 0;
+  width: 100%;
+}
+
+.hover ul {
+  line-height: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.hover li {
+  display: inline-block;
+  height: 50px;
+}
+
+.hidden {
+  display: none;
+}
