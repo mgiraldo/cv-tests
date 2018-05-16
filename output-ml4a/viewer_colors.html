@@ -50,6 +50,14 @@
       grid.addEventListener("mouseout", function (e) {
         hover.classList.add("hidden")
       })
+      grid.addEventListener("click", e => {
+        var nx = e.layerX / grid.clientWidth;
+        var ny = e.layerY / grid.clientHeight;
+        var row = Math.floor(ny * rows)
+        var col = Math.floor(nx * columns)
+        var id = imagexy[col + "," + row].replace("/Users/mga/Documents/website/cv/output-colors/", "").replace(".json", "");
+        window.open("https://dp.la/item/" + id)
+      })
       grid.addEventListener("mousemove", function (e) {
         hover.classList.remove("hidden")
         var nx = e.layerX / grid.clientWidth;
