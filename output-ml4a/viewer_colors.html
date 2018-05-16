@@ -23,7 +23,6 @@
     var points, imagexy = {};
     var hover = document.createElement("div");
     var img = new Image();
-    hover.appendChild(img);
     var palette = document.createElement("ul");
     palette.appendChild(document.createElement("li"))
     palette.appendChild(document.createElement("li"))
@@ -31,6 +30,7 @@
     palette.appendChild(document.createElement("li"))
     palette.appendChild(document.createElement("li"))
     hover.appendChild(palette);
+    hover.appendChild(img);
     hover.classList.add("hover", "hidden")
     grid.appendChild(hover);
     var xmlhttp = new XMLHttpRequest(),
