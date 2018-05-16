@@ -28,7 +28,7 @@
     var hover = document.createElement("div");
     var img = new Image();
     var palette = document.createElement("ul");
-    var startX, startY, selectedCells = [], selectedHash = {}, selectionMode = "drag", isSelecting = false;
+    var startX, startY, dragSelection = [], selectedCells = [], selectedHash = {}, selectionMode = "drag", isSelecting = false;
     palette.appendChild(document.createElement("li"))
     palette.appendChild(document.createElement("li"))
     palette.appendChild(document.createElement("li"))
@@ -62,8 +62,15 @@
       })
       grid.addEventListener("mouseup", function (e) {
         isSelecting = false;
+        if (dragSelection.length > 0) {
+          dragSelection.forEach(c => addCell(c))
+          dragSelection = []
+        }
+        drawSelection()
       })
       grid.addEventListener("click", e => {
+        selectionMode = "click";
+        isSelecting = false;
         var nx = e.layerX / grid.clientWidth;
         var ny = e.layerY / grid.clientHeight;
         var row = Math.floor(ny * rows)
@@ -82,7 +89,7 @@
         isSelecting = true;
         startX = e.layerX;
         startY = e.layerY;
-        // if (selectionMode == "drag") makeDragSelection(startX, startY, startX, startY)
+        selectionMode = "drag";
       })
       grid.addEventListener("mousemove", function (e) {
         hover.classList.remove("hidden")
@@ -109,8 +116,10 @@
       })
     }
     function addCell(cell) {
+      if (selectedHash[cell[0] + "," + cell[1]]) return;
       selectedHash[cell[0] + "," + cell[1]] = 1;
       selectedCells.push(cell)
+      selectedCells.sort()
     }
     function removeCell(cell) {
       delete selectedHash[cell[0] + "," + cell[1]];
@@ -141,11 +150,11 @@
       ny = toY / grid.clientHeight;
       toRow = Math.floor(ny * rows)
       toCol = Math.floor(nx * columns)
-      // selectedCells = [];
+      dragSelection = [];
       for (var i = fromRow; i <= toRow; i++) {
         for (var j = fromCol; j <= toCol; j++) {
           var cell = [i, j];
-          if (!selectedHash[i + "," + j]) addCell(cell);
+          dragSelection.push(cell);
         }
       }
       drawSelection();
@@ -164,9 +173,10 @@
         .domain([0, rows])
         .range([0, grid.clientHeight]);
       d3.selectAll("svg > *").remove();
-      if (selectedCells.length === 0) return;
+      var selectionData = selectedCells.concat(dragSelection);
+      if (selectionData.length === 0) return;
       var plot = svg.selectAll("rect")
-        .data(selectedCells)
+        .data(selectionData)
         .enter()
         .append("g")
         .append("rect")
@@ -174,7 +184,7 @@
         .attr("y", (d) => yScale(d[0]))
         .attr("width", cellWidth)
         .attr("height", cellHeight)
-        .attr("fill", "white")
+        .attr("fill", "yellow")
         .attr("fill-opacity", 0.5)
         .attr("stroke", "yellow")
         .attr("stroke-width", strokeWidth)
