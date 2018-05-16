@@ -28,7 +28,7 @@
     var hover = document.createElement("div");
     var img = new Image();
     var palette = document.createElement("ul");
-    var startX, startY, selectedCells = [], selectionMode = "drag", isSelecting = false;
+    var startX, startY, selectedCells = [], selectedHash = {}, selectionMode = "drag", isSelecting = false;
     palette.appendChild(document.createElement("li"))
     palette.appendChild(document.createElement("li"))
     palette.appendChild(document.createElement("li"))
@@ -63,19 +63,26 @@
       grid.addEventListener("mouseup", function (e) {
         isSelecting = false;
       })
-      // grid.addEventListener("click", e => {
-      //   var nx = e.layerX / grid.clientWidth;
-      //   var ny = e.layerY / grid.clientHeight;
-      //   var row = Math.floor(ny * rows)
-      //   var col = Math.floor(nx * columns)
-      //   var id = imagexy[col + "," + row].replace("/Users/mga/Documents/website/cv/images/scaled/", "").replace(".jpg", "");
-      //   window.open("https://dp.la/item/" + id)
-      // })
+      grid.addEventListener("click", e => {
+        var nx = e.layerX / grid.clientWidth;
+        var ny = e.layerY / grid.clientHeight;
+        var row = Math.floor(ny * rows)
+        var col = Math.floor(nx * columns)
+        var cell = [row, col];
+        if (!selectedHash[row + "," + col]) {
+          addCell(cell);
+        } else {
+          removeCell(cell);
+        }
+        drawSelection()
+        // var id = imagexy[col + "," + row].replace("/Users/mga/Documents/website/cv/images/scaled/", "").replace(".jpg", "");
+        // window.open("https://dp.la/item/" + id)
+      })
       grid.addEventListener("mousedown", e => {
         isSelecting = true;
         startX = e.layerX;
         startY = e.layerY;
-        if (selectionMode == "drag") makeDragSelection(startX, startY, startX, startY)
+        // if (selectionMode == "drag") makeDragSelection(startX, startY, startX, startY)
       })
       grid.addEventListener("mousemove", function (e) {
         hover.classList.remove("hidden")
@@ -101,6 +108,19 @@
         if (col < columns * .5) hover.classList.add("right");
       })
     }
+    function addCell(cell) {
+      selectedHash[cell[0] + "," + cell[1]] = 1;
+      selectedCells.push(cell)
+    }
+    function removeCell(cell) {
+      delete selectedHash[cell[0] + "," + cell[1]];
+      selectedCells.forEach((c, index) => {
+        if (c[0] === cell[0] && c[1] === cell[1]) {
+          selectedCells.splice(index, 1);
+          return;
+        }
+      })
+    }
     function makeDragSelection(fromX, fromY, toX, toY) {
       if (toX < fromX) {
         var X = toX;
@@ -121,19 +141,22 @@
       ny = toY / grid.clientHeight;
       toRow = Math.floor(ny * rows)
       toCol = Math.floor(nx * columns)
-      selectedCells = [];
+      // selectedCells = [];
       for (var i = fromRow; i <= toRow; i++) {
         for (var j = fromCol; j <= toCol; j++) {
-          selectedCells.push([j, i]);
+          var cell = [i, j];
+          if (!selectedHash[i + "," + j]) addCell(cell);
         }
       }
       drawSelection();
     }
     function drawSelection() {
-      // console.log(selectedCells)
-      svg.attr("width", grid.clientWidth).attr("height", grid.clientHeight)
+      // console.log(selectedCells.length + " cells")
+      // console.table(selectedCells)
+      var strokeWidth = 4;
       var cellWidth = grid.clientWidth / columns
       var cellHeight = grid.clientHeight / rows
+      svg.attr("width", grid.clientWidth).attr("height", grid.clientHeight)
       var xScale = d3.scaleLinear()
         .domain([0, columns])
         .range([0, grid.clientWidth]);
@@ -141,18 +164,20 @@
         .domain([0, rows])
         .range([0, grid.clientHeight]);
       d3.selectAll("svg > *").remove();
+      if (selectedCells.length === 0) return;
       var plot = svg.selectAll("rect")
         .data(selectedCells)
         .enter()
         .append("g")
         .append("rect")
-        .attr("x", (d) => xScale(d[0]))
-        .attr("y", (d) => yScale(d[1]))
+        .attr("x", (d) => xScale(d[1]))
+        .attr("y", (d) => yScale(d[0]))
         .attr("width", cellWidth)
         .attr("height", cellHeight)
-        .attr("fill", "none")
+        .attr("fill", "white")
+        .attr("fill-opacity", 0.5)
         .attr("stroke", "yellow")
-        .attr("stroke-width", 3);
+        .attr("stroke-width", strokeWidth)
     }
     function loadColors(file) {
       var xmlhttp = new XMLHttpRequest(),
