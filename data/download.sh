@@ -11,4 +11,4 @@ while read id object; do
   echo ""
 done < <(cat images.ndjson| jq -r '.|"\(.id) \(.object)"')
 end=$(date +%s)
-echo  "$(($end - $start)) s"
+echo  "Download completed in $(($end - $start)) seconds"
