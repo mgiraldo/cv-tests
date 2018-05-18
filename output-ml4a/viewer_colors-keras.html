@@ -28,6 +28,7 @@
     var hover = document.createElement("div");
     var img = new Image();
     var palette = document.createElement("ul");
+    palette.classList.add("palette")
     var startX, startY, dragSelection = [], selectedCells = [], selectedHash = {}, selectionMode = "drag", isSelecting = false;
     palette.appendChild(document.createElement("li"))
     palette.appendChild(document.createElement("li"))
@@ -36,6 +37,8 @@
     palette.appendChild(document.createElement("li"))
     hover.appendChild(palette);
     hover.appendChild(img);
+    var metadata = document.createElement("div");
+    hover.appendChild(metadata)
     hover.classList.add("hover", "hidden")
     grid.appendChild(hover);
     var xmlhttp = new XMLHttpRequest(),
@@ -108,6 +111,8 @@
           img.src = url
           colorurl = "/output-colors" + url.replace("/images/scaled", "").replace(".jpg", ".json")
           loadColors(colorurl)
+          var id = url.replace("/images/scaled/", "").replace(".jpg", "")
+          getMetadata(id)
           // console.log(col, row, imagexy[col + "," + row])
         }
         hover.classList.remove("left", "right");
@@ -129,6 +134,41 @@
           return;
         }
       })
+    }
+    function getMetadata(id) {
+      var xmlhttp = new XMLHttpRequest(),
+        method = 'GET',
+        url = "https://dp.la/api/dpla/items?fields=sourceResource.description,sourceResource.date,sourceResource.title,sourceResource.subject.name,provider.name&id=" + id;
+
+      xmlhttp.open(method, url, true);
+      xmlhttp.onload = function (data) {
+        var item = JSON.parse(data.target.response).docs[0]
+        metadata.innerHTML = "";
+        var title = document.createElement("h1")
+        title.classList.add("title")
+        title.innerHTML = item["sourceResource.title"];
+        metadata.appendChild(title)
+        // if (item["sourceResource.description"]) {
+        //   var description = document.createElement("p")
+        //   description.innerHTML = item["sourceResource.description"];
+        //   metadata.appendChild(description)
+        // }
+        var provider = document.createElement("p")
+        provider.innerHTML = item["provider.name"]
+        metadata.appendChild(provider)
+        if (item["sourceResource.subject.name"]) {
+          var subjects = document.createElement("ul")
+          subjects.classList.add("subjects")
+          item["sourceResource.subject.name"].forEach(s => {
+            var subject = document.createElement("li")
+            subject.innerHTML = s
+            subjects.appendChild(subject)
+          })
+          metadata.appendChild(subjects)
+        }
+        // console.log(item)
+      };
+      xmlhttp.send()
     }
     function makeDragSelection(fromX, fromY, toX, toY) {
       if (toX < fromX) {

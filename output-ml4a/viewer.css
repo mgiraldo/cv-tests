@@ -53,18 +53,34 @@ body {
   width: 100%;
 }
 
-.hover ul {
+.palette {
   line-height: 0;
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.hover li {
+.palette li {
   display: inline-block;
   height: 50px;
 }
 
 .hidden {
   display: none;
+}
+
+.title {
+  font-size: 1.25rem;
+}
+
+.subjects {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.subjects li {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

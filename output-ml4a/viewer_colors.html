@@ -24,6 +24,7 @@
     var hover = document.createElement("div");
     var img = new Image();
     var palette = document.createElement("ul");
+    palette.classList.add("palette")
     palette.appendChild(document.createElement("li"))
     palette.appendChild(document.createElement("li"))
     palette.appendChild(document.createElement("li"))
@@ -31,6 +32,8 @@
     palette.appendChild(document.createElement("li"))
     hover.appendChild(palette);
     hover.appendChild(img);
+    var metadata = document.createElement("div");
+    hover.appendChild(metadata)
     hover.classList.add("hover", "hidden")
     grid.appendChild(hover);
     var xmlhttp = new XMLHttpRequest(),
