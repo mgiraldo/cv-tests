@@ -48,7 +48,6 @@
 }
 
 .expansion {
-  align-items: center;
   background-color: rgb(25, 25, 25);
   color: rgb(215, 215, 215);
   display: flex;
@@ -62,6 +61,7 @@
 
 .main {
   display: flex;
+  justify-content: start;
 }
 
 .image-palette {
@@ -110,6 +110,7 @@
 }
 
 .add {
+  align-self: center;
   background: orange;
   border-radius: 0.5rem;
   color: black;
