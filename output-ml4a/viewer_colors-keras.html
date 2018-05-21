@@ -13,15 +13,15 @@
 
   <div id="grid">
     <div id="selection"></div>
-    <img id="gridImage" class="base" src="colors-v4-tSNE-grid.jpg" />
+    <img id="gridImage" class="base" src="colors-v4-tSNE-gridnarrow.jpg" />
   </div>
 
   <script type="text/javascript">
     var grid = document.getElementById("grid")
     var svg = d3.select("#selection").append("svg")
     document.getElementById("gridImage").ondragstart = () => false;
-    var columns = 53
-    var rows = 43
+    var columns = 13
+    var rows = 175
     var last_row = -1;
     var last_col = -1;
     var points, imagexy = {};
@@ -43,11 +43,12 @@
     grid.appendChild(hover);
     var xmlhttp = new XMLHttpRequest(),
       method = 'GET',
-      url = './colors-v4-tSNE-grid-points.json';
+      url = './colors-v4-tSNE-gridnarrow-points.json';
 
     xmlhttp.open(method, url, true);
     xmlhttp.onload = function (data) {
       points = JSON.parse(data.target.response)
+      points.sort((a, b) => a.point[1] < b.point[1] ? -1 : (a.point[1] > b.point[1] ? 1 : (a.point[0] < b.point[0] ? -1 : (a.point[0] > b.point[0] ? 1 : 0))))
       points.forEach(p => {
         imagexy[p.point[0] + "," + p.point[1]] = p.path
       })

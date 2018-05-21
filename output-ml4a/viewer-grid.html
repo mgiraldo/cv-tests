@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>grid viewer</title>
+
+  <link rel="stylesheet" href="viewer-grid.css" />
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+
+</head>
+
+<body>
+
+  <div id="grid" class="grid">
+  </div>
+
+  <script type="text/javascript">
+    var grid = document.getElementById("grid")
+    var expansion, metadata
+    // var svg = d3.select("#selection").append("svg")
+    // document.getElementById("gridImage").ondragstart = () => false;
+    // var columns = 13
+    // var rows = 175
+    var last_row = -1;
+    var last_col = -1;
+    var points, imagexy = {};
+    var startX, startY, dragSelection = [], selectedCells = [], selectedHash = {}, selectionMode = "drag", isSelecting = false;
+    var xmlhttp = new XMLHttpRequest(),
+      method = 'GET',
+      url = './colors-v4-tSNE-gridnarrow-points.json';
+    var expanded
+    var expansion
+
+    window.onresize = function (e) {
+      setRow()
+    }
+
+    function setRow() {
+      var topExpanded = expanded.offsetTop;
+      if (topExpanded === 0) {
+        // first row
+        expansion.style = "grid-row-start: 2;"
+        return;
+      }
+      // not in top so we need to find what row
+      var tops = [topExpanded]
+      var el = expanded.previousElementSibling
+      while (el) {
+        tops.push(el.offsetTop)
+        el = el.previousElementSibling
+      }
+      var unique = tops.filter((val, idx, array) => array.indexOf(val) === idx);
+      expansion.style = "grid-row-start: " + (unique.length + 1) + ";"
+    }
+
+    xmlhttp.open(method, url, true);
+    xmlhttp.onload = function (data) {
+      points = JSON.parse(data.target.response)
+      points.sort((a, b) => a.point[1] < b.point[1] ? -1 : (a.point[1] > b.point[1] ? 1 : (a.point[0] < b.point[0] ? -1 : (a.point[0] > b.point[0] ? 1 : 0))))
+      points.forEach(p => {
+        var item = document.createElement("div")
+        var url = p.path.replace("/Users/mga/Documents/website/cv", "");
+        var id = url.replace("/images/scaled/", "").replace(".jpg", "")
+        item.classList.add("item")
+        item.setAttribute("data-url", url)
+        item.setAttribute("data-id", id)
+        item.setAttribute("data-point", p.point.toString())
+        var itemImg = new Image();
+        itemImg.src = url
+        item.appendChild(itemImg)
+        grid.appendChild(item)
+        item.onclick = gridItemClick;
+        // imagexy[p.point[0] + "," + p.point[1]] = p.path
+      })
+      init();
+    };
+    xmlhttp.send()
+    function createExpansion(sibling, url, colorurl, id) {
+      var currentExpansion = document.getElementById("expansion")
+      if (currentExpansion) currentExpansion.remove()
+      var currentExpanded = document.getElementById("expanded")
+      if (currentExpanded) {
+        currentExpanded.removeAttribute("id")
+        currentExpanded.classList.remove("expanded")
+      }
+      if (sibling === currentExpanded) return
+      sibling.setAttribute("id", "expanded")
+      sibling.classList.add("expanded")
+      expansion = document.createElement("div");
+      expansion.setAttribute("id", "expansion")
+      expansion.classList.add("expansion")
+      var main = document.createElement("div");
+      main.classList.add("main")
+      var img = new Image();
+      img.src = url;
+      var imgDiv = document.createElement("div")
+      imgDiv.classList.add("image-palette")
+      var palette = document.createElement("ul");
+      palette.classList.add("palette")
+      palette.appendChild(document.createElement("li"))
+      palette.appendChild(document.createElement("li"))
+      palette.appendChild(document.createElement("li"))
+      palette.appendChild(document.createElement("li"))
+      palette.appendChild(document.createElement("li"))
+      imgDiv.appendChild(palette);
+      imgDiv.appendChild(img);
+      main.appendChild(imgDiv);
+      metadata = document.createElement("div");
+      metadata.classList.add("metadata")
+      main.appendChild(metadata)
+      expansion.appendChild(main)
+      var add = document.createElement("div");
+      add.innerHTML = "add item"
+      add.classList.add("add")
+      expansion.appendChild(add)
+      sibling.insertAdjacentElement("afterend", expansion);
+      loadColors(colorurl)
+      getMetadata(id)
+      expanded = sibling
+      expansion = expansion
+    }
+    function gridItemClick(e) {
+      console.log(e.target.getAttribute("data-point"))
+      var url = e.target.getAttribute("data-url");
+      var id = e.target.getAttribute("data-id");
+      var colorurl = "/output-colors" + url.replace("/images/scaled", "").replace(".jpg", ".json")
+      createExpansion(e.target, url, colorurl, id)
+      setRow()
+    }
+    // window.onresize = () => {
+    //   drawSelection()
+    // }
+    function init() {
+      // svg.attr("width", grid.clientWidth).attr("height", grid.clientHeight)
+      // grid.addEventListener("mouseout", function (e) {
+      //   expansion.classList.add("hidden")
+      //   isSelecting = false;
+      // })
+      // grid.addEventListener("mouseup", function (e) {
+      //   isSelecting = false;
+      //   if (dragSelection.length > 0) {
+      //     dragSelection.forEach(c => addCell(c))
+      //     dragSelection = []
+      //   }
+      //   drawSelection()
+      // })
+      // grid.addEventListener("click", e => {
+      //   selectionMode = "click";
+      //   isSelecting = false;
+      //   var nx = e.layerX / grid.clientWidth;
+      //   var ny = e.layerY / grid.clientHeight;
+      //   var row = Math.floor(ny * rows)
+      //   var col = Math.floor(nx * columns)
+      //   var cell = [row, col];
+      //   if (!selectedHash[row + "," + col]) {
+      //     addCell(cell);
+      //   } else {
+      //     removeCell(cell);
+      //   }
+      //   drawSelection()
+      //   // var id = imagexy[col + "," + row].replace("/Users/mga/Documents/website/cv/images/scaled/", "").replace(".jpg", "");
+      //   // window.open("https://dp.la/item/" + id)
+      // })
+      // grid.addEventListener("mousedown", e => {
+      //   isSelecting = true;
+      //   startX = e.layerX;
+      //   startY = e.layerY;
+      //   selectionMode = "drag";
+      // })
+      // grid.addEventListener("mousemove", function (e) {
+      //   expansion.classList.remove("hidden")
+      //   var nx = e.layerX / grid.clientWidth;
+      //   var ny = e.layerY / grid.clientHeight;
+      //   var row = Math.floor(ny * rows)
+      //   var col = Math.floor(nx * columns)
+      //   var url, colorurl;
+      //   if (row != last_row || col != last_col) {
+      //     if (isSelecting) {
+      //       if (selectionMode == "drag") makeDragSelection(startX, startY, e.layerX, e.layerY)
+      //     }
+      //     last_col = col;
+      //     last_row = row;
+      //     url = imagexy[col + "," + row].replace("/Users/mga/Documents/website/cv", "");
+      //     img.src = url
+      //     colorurl = "/output-colors" + url.replace("/images/scaled", "").replace(".jpg", ".json")
+      //     loadColors(colorurl)
+      //     var id = url.replace("/images/scaled/", "").replace(".jpg", "")
+      //     getMetadata(id)
+      //     // console.log(col, row, imagexy[col + "," + row])
+      //   }
+      //   expansion.classList.remove("left", "right");
+      //   if (col > columns * .5) expansion.classList.add("left");
+      //   if (col < columns * .5) expansion.classList.add("right");
+      // })
+    }
+    function addCell(cell) {
+      if (selectedHash[cell]) return;
+      selectedHash[cell] = 1;
+      selectedCells.push(cell)
+      selectedCells.sort()
+    }
+    function removeCell(cell) {
+      delete selectedHash[cell];
+      selectedCells.forEach((c, index) => {
+        if (c === cell) {
+          selectedCells.splice(index, 1);
+          return;
+        }
+      })
+    }
+    function getMetadata(id) {
+      var xmlhttp = new XMLHttpRequest(),
+        method = 'GET',
+        url = "https://dp.la/api/dpla/items?fields=sourceResource.description,sourceResource.date,sourceResource.title,sourceResource.subject.name,provider.name&id=" + id;
+
+      xmlhttp.open(method, url, true);
+      xmlhttp.onload = function (data) {
+        var item = JSON.parse(data.target.response).docs[0]
+        metadata.innerHTML = "";
+        var title = document.createElement("h1")
+        title.classList.add("title")
+        title.innerHTML = item["sourceResource.title"];
+        metadata.appendChild(title)
+        // if (item["sourceResource.description"]) {
+        //   var description = document.createElement("p")
+        //   description.innerHTML = item["sourceResource.description"];
+        //   metadata.appendChild(description)
+        // }
+        var provider = document.createElement("p")
+        provider.innerHTML = item["provider.name"]
+        metadata.appendChild(provider)
+        if (item["sourceResource.subject.name"]) {
+          var subjects = document.createElement("ul")
+          subjects.classList.add("subjects")
+          item["sourceResource.subject.name"].forEach(s => {
+            var subject = document.createElement("li")
+            subject.innerHTML = s
+            subjects.appendChild(subject)
+          })
+          metadata.appendChild(subjects)
+        }
+        // console.log(item)
+      };
+      xmlhttp.send()
+    }
+    // function makeDragSelection(fromX, fromY, toX, toY) {
+    //   if (toX < fromX) {
+    //     var X = toX;
+    //     toX = fromX;
+    //     fromX = X;
+    //   }
+    //   if (toY < fromY) {
+    //     var Y = toY;
+    //     toY = fromY;
+    //     fromY = Y;
+    //   }
+    //   var nx, ny, fromRow, fromCol, toRow, toCol;
+    //   nx = fromX / grid.clientWidth;
+    //   ny = fromY / grid.clientHeight;
+    //   fromRow = Math.floor(ny * rows)
+    //   fromCol = Math.floor(nx * columns)
+    //   nx = toX / grid.clientWidth;
+    //   ny = toY / grid.clientHeight;
+    //   toRow = Math.floor(ny * rows)
+    //   toCol = Math.floor(nx * columns)
+    //   dragSelection = [];
+    //   for (var i = fromRow; i <= toRow; i++) {
+    //     for (var j = fromCol; j <= toCol; j++) {
+    //       var cell = [i, j];
+    //       dragSelection.push(cell);
+    //     }
+    //   }
+    //   drawSelection();
+    // }
+    // function drawSelection() {
+    // console.log(selectedCells.length + " cells")
+    // console.table(selectedCells)
+    // var strokeWidth = 4;
+    // var cellWidth = grid.clientWidth / columns
+    // var cellHeight = grid.clientHeight / rows
+    // svg.attr("width", grid.clientWidth).attr("height", grid.clientHeight)
+    // var xScale = d3.scaleLinear()
+    //   .domain([0, columns])
+    //   .range([0, grid.clientWidth]);
+    // var yScale = d3.scaleLinear()
+    //   .domain([0, rows])
+    //   .range([0, grid.clientHeight]);
+    // d3.selectAll("svg > *").remove();
+    // var selectionData = selectedCells.concat(dragSelection);
+    // if (selectionData.length === 0) return;
+    // var plot = svg.selectAll("rect")
+    //   .data(selectionData)
+    //   .enter()
+    //   .append("g")
+    //   .append("rect")
+    //   .attr("x", (d) => xScale(d[1]))
+    //   .attr("y", (d) => yScale(d[0]))
+    //   .attr("width", cellWidth)
+    //   .attr("height", cellHeight)
+    //   .attr("fill", "yellow")
+    //   .attr("fill-opacity", 0.5)
+    //   .attr("stroke", "yellow")
+    //   .attr("stroke-width", strokeWidth)
+    // }
+    function loadColors(file) {
+      var xmlhttp = new XMLHttpRequest(),
+        method = 'GET',
+        url = file;
+
+      xmlhttp.open(method, url, true);
+      xmlhttp.onload = function (data) {
+        JSON.parse(data.target.response).imgdata[1].clusters.cluster.forEach((c, index) => {
+          expansion.getElementsByTagName("li")[index].setAttribute("style", "width: " + (c[0].f * 100) + "%; background-color: " + c[2].hex[0].hex + ";")
+        })
+      };
+      xmlhttp.send()
+    }
+  </script>
+
+</body>
+
+</html>
