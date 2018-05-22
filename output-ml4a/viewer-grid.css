@@ -7,10 +7,21 @@
   display: none;
 }
 
+.tools {
+  background-color: white;
+  border-radius: 0.25rem;
+  left: 1rem;
+  padding: 1rem;
+  position: fixed;
+  top: 1rem;
+  z-index: 1;
+}
+
 .grid {
   display: grid;
   grid-gap: 1rem 0.25rem;
   grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  padding-top: 3.5rem;
   position: relative;
 }
 
@@ -118,7 +129,7 @@
 .add {
   align-self: center;
   background: orange;
-  border-radius: 0.5rem;
+  border-radius: 0.25rem;
   color: black;
   margin: 1rem;
   padding: 1rem 0;

@@ -11,6 +11,11 @@
 
 <body>
 
+  <div class="tools">
+    <button id="mode">single selection</button>
+    <button id="clear">clear selection</button>
+  </div>
+
   <div id="grid" class="grid">
   </div>
 
@@ -30,6 +35,19 @@
       url = './colors-v4-tSNE-gridnarrow-points.json';
     var expanded
     var expansion
+    var btnMode = document.getElementById("mode")
+    var btnClear = document.getElementById("clear")
+
+    clear.onclick = clearSelection
+    mode.onclick = (e) => {
+      if (selectionMode === "expand") {
+        selectionMode = "multiple"
+        mode.innerHTML = "multiple selection"
+      } else {
+        selectionMode = "expand"
+        mode.innerHTML = "single selection"
+      }
+    }
 
     window.onresize = function (e) {
       setRow()
@@ -134,7 +152,7 @@
     function gridItemClick(e) {
       var point = e.target.getAttribute("data-point")
       var id = e.target.getAttribute("data-id");
-      if (selectionMode === "click") {
+      if (selectionMode === "multiple") {
         addCell(point, id)
         return
       }
@@ -225,6 +243,13 @@
           return;
         }
       })
+    }
+    function clearSelection() {
+      Object.values(selectedHash).forEach(id => {
+        var item = document.getElementById(id).classList.remove("selected")
+      })
+      selectedHash = {}
+      selectedCells = []
     }
     function drawSelection() {
       Object.values(selectedHash).forEach(id => {
