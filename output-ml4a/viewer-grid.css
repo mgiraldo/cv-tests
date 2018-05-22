@@ -66,8 +66,7 @@
   grid-column-start: 1;
   grid-column-end: -1;
   grid-row-start: 3;
-  max-height: 100vh;
-  overflow-y: scroll;
+  max-height: 100rem;
   transition: all 0.1s ease-in;
 }
 
@@ -87,6 +86,8 @@
 }
 
 .image-palette img {
+  max-height: 40rem;
+  object-fit: contain;
   width: 100%;
 }
 
