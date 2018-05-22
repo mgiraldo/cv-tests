@@ -152,6 +152,12 @@
     function gridItemClick(e) {
       var point = e.target.getAttribute("data-point")
       var id = e.target.getAttribute("data-id");
+      var selected = selectedHash[point] === id;
+      console.log(point, id, selected)
+      if (selected && selectionMode === "multiple") {
+        removeCell(point)
+        return
+      }
       if (selectionMode === "multiple") {
         addCell(point, id)
         return
@@ -236,6 +242,7 @@
       drawSelection()
     }
     function removeCell(cell) {
+      var id = selectedHash[cell]
       delete selectedHash[cell];
       selectedCells.forEach((c, index) => {
         if (c === cell) {
@@ -243,13 +250,17 @@
           return;
         }
       })
+      if (id) clearCell(id)
     }
     function clearSelection() {
       Object.values(selectedHash).forEach(id => {
-        var item = document.getElementById(id).classList.remove("selected")
+        clearCell(id)
       })
       selectedHash = {}
       selectedCells = []
+    }
+    function clearCell(id) {
+      document.getElementById(id).classList.remove("selected")
     }
     function drawSelection() {
       Object.values(selectedHash).forEach(id => {
