@@ -9,13 +9,13 @@
 
 .grid {
   display: grid;
-  grid-gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  grid-gap: 1rem 0.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
   position: relative;
 }
 
 .item {
-  border: 0.5rem solid transparent;
+  border: 0.25rem solid transparent;
   height: 10rem;
   font-size: 1.75rem;
 }
@@ -55,13 +55,19 @@
   grid-column-start: 1;
   grid-column-end: -1;
   grid-row-start: 3;
-  padding: 1rem;
-  min-height: 10rem;
+  max-height: 100vh;
+  overflow-y: scroll;
+  transition: all 0.1s ease-in;
+}
+
+.expansion.collapsed {
+  max-height: 1vh;
 }
 
 .main {
   display: flex;
   justify-content: start;
+  margin: 1rem;
 }
 
 .image-palette {
@@ -114,6 +120,7 @@
   background: orange;
   border-radius: 0.5rem;
   color: black;
+  margin: 1rem;
   padding: 1rem 0;
   text-align: center;
   width: 6rem;

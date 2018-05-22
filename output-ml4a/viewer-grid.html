@@ -91,7 +91,7 @@
       sibling.classList.add("expanded")
       expansion = document.createElement("div");
       expansion.setAttribute("id", "expansion")
-      expansion.classList.add("expansion")
+      expansion.classList.add("expansion", "collapsed")
       if (sibling.classList.contains("selected")) expansion.classList.add("selected")
       var main = document.createElement("div");
       main.classList.add("main")
@@ -129,6 +129,7 @@
       loadColors(colorurl)
       getMetadata(id)
       expanded = sibling
+      setTimeout(() => expansion.classList.remove("collapsed"), 10)
     }
     function gridItemClick(e) {
       var point = e.target.getAttribute("data-point")
