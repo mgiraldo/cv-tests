@@ -67,6 +67,7 @@
   grid-column-end: -1;
   grid-row-start: 3;
   max-height: 100rem;
+  overflow: hidden;
   transition: all 0.1s ease-in;
 }
 
