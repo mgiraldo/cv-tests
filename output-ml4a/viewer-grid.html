@@ -3,9 +3,9 @@
 
 <head>
   <title>grid viewer</title>
-
+  <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+  <meta content="utf-8" http-equiv="encoding">
   <link rel="stylesheet" href="viewer-grid.css" />
-  <script src="https://d3js.org/d3.v5.min.js"></script>
 
 </head>
 
@@ -34,8 +34,8 @@
     var btnMode = document.getElementById("mode")
     var btnClear = document.getElementById("clear")
 
-    clear.onclick = clearSelection
-    mode.onclick = (e) => {
+    btnClear.onclick = clearSelection
+    btnMode.onclick = (e) => {
       if (selectionMode === "expand") {
         selectionMode = "multiple"
         mode.innerHTML = "multiple selection"
