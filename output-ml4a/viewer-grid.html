@@ -22,10 +22,6 @@
   <script type="text/javascript">
     var grid = document.getElementById("grid")
     var expansion, metadata
-    // var svg = d3.select("#selection").append("svg")
-    // document.getElementById("gridImage").ondragstart = () => false;
-    // var columns = 13
-    // var rows = 175
     var last_row = -1;
     var last_col = -1;
     var points, imagexy = {};
@@ -168,71 +164,8 @@
       createExpansion(e.target, url, colorurl, id, point)
       setRow()
     }
-    // window.onresize = () => {
-    //   drawSelection()
-    // }
     function init() {
-      // svg.attr("width", grid.clientWidth).attr("height", grid.clientHeight)
-      // grid.addEventListener("mouseout", function (e) {
-      //   expansion.classList.add("hidden")
-      //   isSelecting = false;
-      // })
-      // grid.addEventListener("mouseup", function (e) {
-      //   isSelecting = false;
-      //   if (dragSelection.length > 0) {
-      //     dragSelection.forEach(c => addCell(c))
-      //     dragSelection = []
-      //   }
-      //   drawSelection()
-      // })
-      // grid.addEventListener("click", e => {
-      //   selectionMode = "click";
-      //   isSelecting = false;
-      //   var nx = e.layerX / grid.clientWidth;
-      //   var ny = e.layerY / grid.clientHeight;
-      //   var row = Math.floor(ny * rows)
-      //   var col = Math.floor(nx * columns)
-      //   var cell = [row, col];
-      //   if (!selectedHash[row + "," + col]) {
-      //     addCell(cell);
-      //   } else {
-      //     removeCell(cell);
-      //   }
-      //   drawSelection()
-      //   // var id = imagexy[col + "," + row].replace("/Users/mga/Documents/website/cv/images/scaled/", "").replace(".jpg", "");
-      //   // window.open("https://dp.la/item/" + id)
-      // })
-      // grid.addEventListener("mousedown", e => {
-      //   isSelecting = true;
-      //   startX = e.layerX;
-      //   startY = e.layerY;
-      //   selectionMode = "drag";
-      // })
-      // grid.addEventListener("mousemove", function (e) {
-      //   expansion.classList.remove("hidden")
-      //   var nx = e.layerX / grid.clientWidth;
-      //   var ny = e.layerY / grid.clientHeight;
-      //   var row = Math.floor(ny * rows)
-      //   var col = Math.floor(nx * columns)
-      //   var url, colorurl;
-      //   if (row != last_row || col != last_col) {
-      //     if (isSelecting) {
-      //       if (selectionMode == "drag") makeDragSelection(startX, startY, e.layerX, e.layerY)
-      //     }
-      //     last_col = col;
-      //     last_row = row;
-      //     url = imagexy[col + "," + row].replace("/Users/mga/Documents/website/cv", "");
-      //     img.src = url
-      //     colorurl = "/output-colors" + url.replace("/images/scaled", "").replace(".jpg", ".json")
-      //     loadColors(colorurl)
-      //     var id = url.replace("/images/scaled/", "").replace(".jpg", "")
-      //     getMetadata(id)
-      //     // console.log(col, row, imagexy[col + "," + row])
-      //   }
-      //   expansion.classList.remove("left", "right");
-      //   if (col > columns * .5) expansion.classList.add("left");
-      //   if (col < columns * .5) expansion.classList.add("right");
-      // })
+
     }
     function addCell(cell, id) {
       if (selectedHash[cell]) return;
@@ -302,65 +235,6 @@
       };
       xmlhttp.send()
     }
-    // function makeDragSelection(fromX, fromY, toX, toY) {
-    //   if (toX < fromX) {
-    //     var X = toX;
-    //     toX = fromX;
-    //     fromX = X;
-    //   }
-    //   if (toY < fromY) {
-    //     var Y = toY;
-    //     toY = fromY;
-    //     fromY = Y;
-    //   }
-    //   var nx, ny, fromRow, fromCol, toRow, toCol;
-    //   nx = fromX / grid.clientWidth;
-    //   ny = fromY / grid.clientHeight;
-    //   fromRow = Math.floor(ny * rows)
-    //   fromCol = Math.floor(nx * columns)
-    //   nx = toX / grid.clientWidth;
-    //   ny = toY / grid.clientHeight;
-    //   toRow = Math.floor(ny * rows)
-    //   toCol = Math.floor(nx * columns)
-    //   dragSelection = [];
-    //   for (var i = fromRow; i <= toRow; i++) {
-    //     for (var j = fromCol; j <= toCol; j++) {
-    //       var cell = [i, j];
-    //       dragSelection.push(cell);
-    //     }
-    //   }
-    //   drawSelection();
-    // }
-    // function drawSelection() {
-    // console.log(selectedCells.length + " cells")
-    // console.table(selectedCells)
-    // var strokeWidth = 4;
-    // var cellWidth = grid.clientWidth / columns
-    // var cellHeight = grid.clientHeight / rows
-    // svg.attr("width", grid.clientWidth).attr("height", grid.clientHeight)
-    // var xScale = d3.scaleLinear()
-    //   .domain([0, columns])
-    //   .range([0, grid.clientWidth]);
-    // var yScale = d3.scaleLinear()
-    //   .domain([0, rows])
-    //   .range([0, grid.clientHeight]);
-    // d3.selectAll("svg > *").remove();
-    // var selectionData = selectedCells.concat(dragSelection);
-    // if (selectionData.length === 0) return;
-    // var plot = svg.selectAll("rect")
-    //   .data(selectionData)
-    //   .enter()
-    //   .append("g")
-    //   .append("rect")
-    //   .attr("x", (d) => xScale(d[1]))
-    //   .attr("y", (d) => yScale(d[0]))
-    //   .attr("width", cellWidth)
-    //   .attr("height", cellHeight)
-    //   .attr("fill", "yellow")
-    //   .attr("fill-opacity", 0.5)
-    //   .attr("stroke", "yellow")
-    //   .attr("stroke-width", strokeWidth)
-    // }
     function loadColors(file) {
       var xmlhttp = new XMLHttpRequest(),
         method = 'GET',
