@@ -41,7 +41,7 @@
   height: 10vh;
 }
 
-.close img, .far img {
+.close img, .mid img, .far img {
   height: 100%;
   pointer-events: none;
   width: 100%;
