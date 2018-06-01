@@ -21,16 +21,13 @@
 
   <script type="text/javascript">
     var grid = document.getElementById("grid")
-    var expansion, metadata
+    var metadata, metadataIds
+    var expansionElement, metadataElement
     var last_row = -1;
     var last_col = -1;
     var points, imagexy = {};
     var startX, startY, dragSelection = [], selectedCells = [], selectedHash = {}, selectionMode = "expand", isSelecting = false;
-    var xmlhttp = new XMLHttpRequest(),
-      method = 'GET',
-      url = './colors-v4-tSNE-gridwide-points.json';
     var expanded
-    var expansion
     var btnMode = document.getElementById("mode")
     var btnClear = document.getElementById("clear")
 
@@ -49,12 +46,24 @@
       setRow()
     }
 
+    var xmlhttp = new XMLHttpRequest(),
+      method = 'GET',
+      url = './metadata.min.json';
+    xmlhttp.open(method, url, true);
+    xmlhttp.onload = function (data) {
+      metadata = {}
+      var temp = JSON.parse(data.target.response)
+      temp.forEach(t => metadata = Object.assign(metadata, t))
+      init();
+    };
+    xmlhttp.send()
+
     function setRow() {
       if (!expanded) return;
       var topExpanded = expanded.offsetTop;
       if (topExpanded === 0) {
         // first row
-        expansion.style = "grid-row-start: 2;"
+        expansionElement.style = "grid-row-start: 2;"
         return;
       }
       // not in top so we need to find what row
@@ -65,32 +74,9 @@
         el = el.previousElementSibling
       }
       var unique = tops.filter((val, idx, array) => array.indexOf(val) === idx);
-      expansion.style = "grid-row-start: " + (unique.length + 1) + ";"
+      expansionElement.style = "grid-row-start: " + (unique.length + 1) + ";"
     }
 
-    xmlhttp.open(method, url, true);
-    xmlhttp.onload = function (data) {
-      points = JSON.parse(data.target.response)
-      points.sort((a, b) => a.point[1] < b.point[1] ? -1 : (a.point[1] > b.point[1] ? 1 : (a.point[0] < b.point[0] ? -1 : (a.point[0] > b.point[0] ? 1 : 0))))
-      points.forEach(p => {
-        var item = document.createElement("div")
-        var url = p.path.replace("/Users/mga/Documents/website/cv", "");
-        var id = url.replace("/images/scaled/", "").replace(".jpg", "")
-        item.classList.add("item")
-        item.setAttribute("data-url", url)
-        item.setAttribute("data-id", id)
-        item.setAttribute("id", id)
-        item.setAttribute("data-point", p.point.toString())
-        var itemImg = new Image();
-        itemImg.src = url
-        item.appendChild(itemImg)
-        grid.appendChild(item)
-        item.onclick = gridItemClick;
-        // imagexy[p.point[0] + "," + p.point[1]] = p.path
-      })
-      init();
-    };
-    xmlhttp.send()
     function createExpansion(sibling, url, colorurl, id, point) {
       var currentExpansion = document.getElementById("expansion")
       if (currentExpansion) currentExpansion.remove()
@@ -103,10 +89,10 @@
         return
       }
       sibling.classList.add("expanded")
-      expansion = document.createElement("div");
-      expansion.setAttribute("id", "expansion")
-      expansion.classList.add("expansion", "collapsed")
-      if (sibling.classList.contains("selected")) expansion.classList.add("selected")
+      expansionElement = document.createElement("div");
+      expansionElement.setAttribute("id", "expansion")
+      expansionElement.classList.add("expansion", "collapsed")
+      if (sibling.classList.contains("selected")) expansionElement.classList.add("selected")
       var main = document.createElement("div");
       main.classList.add("main")
       var img = new Image();
@@ -123,10 +109,10 @@
       imgDiv.appendChild(palette);
       imgDiv.appendChild(img);
       main.appendChild(imgDiv);
-      metadata = document.createElement("div");
-      metadata.classList.add("metadata")
-      main.appendChild(metadata)
-      expansion.appendChild(main)
+      metadataElement = document.createElement("div");
+      metadataElement.classList.add("metadata")
+      main.appendChild(metadataElement)
+      expansionElement.appendChild(main)
       var add = document.createElement("div");
       add.innerHTML = "add item"
       add.classList.add("add")
@@ -135,21 +121,21 @@
       add.onclick = (e) => {
         var p = e.target.getAttribute("data-point")
         var i = e.target.getAttribute("data-id")
-        console.log(p, i, e)
+        // console.log(p, i, e)
         addCell(p, i)
       }
-      expansion.appendChild(add)
-      sibling.insertAdjacentElement("afterend", expansion);
+      expansionElement.appendChild(add)
+      sibling.insertAdjacentElement("afterend", expansionElement);
       loadColors(colorurl)
       getMetadata(id)
       expanded = sibling
-      setTimeout(() => expansion.classList.remove("collapsed"), 10)
+      setTimeout(() => expansionElement.classList.remove("collapsed"), 10)
     }
     function gridItemClick(e) {
-      var point = e.target.getAttribute("data-point")
-      var id = e.target.getAttribute("data-id");
+      var point = this.getAttribute("data-point")
+      var id = this.getAttribute("data-id");
       var selected = selectedHash[point] === id;
-      console.log(point, id, selected)
+      // console.log(point, id, selected)
       if (selected && selectionMode === "multiple") {
         removeCell(point)
         return
@@ -158,14 +144,53 @@
         addCell(point, id)
         return
       }
-      console.log(point)
-      var url = e.target.getAttribute("data-url");
+      // console.log(point)
+      var url = this.getAttribute("data-url");
       var colorurl = "/output-colors" + url.replace("/images/scaled", "").replace(".jpg", ".json")
-      createExpansion(e.target, url, colorurl, id, point)
+      createExpansion(this, url, colorurl, id, point)
       setRow()
     }
     function init() {
-
+      var xmlhttp = new XMLHttpRequest(),
+        method = 'GET',
+        url = './colors-v4-tSNE-gridwide-points.json';
+      xmlhttp.open(method, url, true);
+      xmlhttp.onload = function (data) {
+        points = JSON.parse(data.target.response)
+        points.sort((a, b) => a.point[1] < b.point[1] ? -1 : (a.point[1] > b.point[1] ? 1 : (a.point[0] < b.point[0] ? -1 : (a.point[0] > b.point[0] ? 1 : 0))))
+        points.forEach(p => createThumbnail(p))
+      };
+      xmlhttp.send()
+    }
+    function createThumbnail(p) {
+      var item = document.createElement("div")
+      var url = p.path.replace("/Users/mga/Documents/website/cv", "");
+      var id = url.replace("/images/scaled/", "").replace(".jpg", "")
+      var meta = metadata[id]
+      item.classList.add("item")
+      item.setAttribute("data-url", url)
+      item.setAttribute("data-id", id)
+      item.setAttribute("id", id)
+      item.setAttribute("data-point", p.point.toString())
+      var itemImg = new Image();
+      itemImg.src = url
+      item.appendChild(itemImg)
+      var itemMeta = document.createElement("div")
+      itemMeta.classList.add("item-metadata")
+      var checkbox = document.createElement("input")
+      checkbox.setAttribute("type", "checkbox")
+      checkbox.classList.add("checkbox")
+      itemMeta.appendChild(checkbox)
+      var title = document.createElement("h2")
+      title.innerText = meta["sourceResource.title"]
+      itemMeta.appendChild(title)
+      var provider = document.createElement("p")
+      provider.innerText = meta["provider.name"]
+      itemMeta.appendChild(provider)
+      item.appendChild(itemMeta)
+      grid.appendChild(item)
+      item.onclick = gridItemClick;
+      // imagexy[p.point[0] + "," + p.point[1]] = p.path
     }
     function addCell(cell, id) {
       if (selectedHash[cell]) return;
@@ -201,39 +226,44 @@
       })
     }
     function getMetadata(id) {
-      var xmlhttp = new XMLHttpRequest(),
-        method = 'GET',
-        url = "https://dp.la/api/dpla/items?fields=sourceResource.description,sourceResource.date,sourceResource.title,sourceResource.subject.name,provider.name&id=" + id;
+      var item = metadata[id]
+      metadataElement.innerHTML = "";
+      var title = document.createElement("h3")
+      title.classList.add("title")
+      title.innerHTML = item["sourceResource.title"];
+      metadataElement.appendChild(title)
+      // if (item["sourceResource.description"]) {
+      //   var description = document.createElement("p")
+      //   description.innerHTML = item["sourceResource.description"];
+      //   metadataElement.appendChild(description)
+      // }
+      var provider = document.createElement("a")
+      provider.classList.add("provider")
+      provider.innerHTML = item["provider.name"]
+      provider.setAttribute("href", item.isShownAt)
+      provider.setAttribute("target", "_blank")
+      metadataElement.appendChild(provider)
+      if (item["sourceResource.subject.name"]) {
+        var subjects = document.createElement("ul")
+        subjects.classList.add("subjects")
+        item["sourceResource.subject.name"].forEach(s => {
+          var subject = document.createElement("li")
+          subject.innerHTML = s
+          subjects.appendChild(subject)
+        })
+        metadataElement.appendChild(subjects)
+      }
+      // var meta = metadata[id]
+      // var xmlhttp = new XMLHttpRequest(),
+      //   method = 'GET',
+      //   url = "https://dp.la/api/dpla/items?fields=sourceResource.description,sourceResource.date,sourceResource.title,sourceResource.subject.name,provider.name&id=" + id;
 
-      xmlhttp.open(method, url, true);
-      xmlhttp.onload = function (data) {
-        var item = JSON.parse(data.target.response).docs[0]
-        metadata.innerHTML = "";
-        var title = document.createElement("h1")
-        title.classList.add("title")
-        title.innerHTML = item["sourceResource.title"];
-        metadata.appendChild(title)
-        // if (item["sourceResource.description"]) {
-        //   var description = document.createElement("p")
-        //   description.innerHTML = item["sourceResource.description"];
-        //   metadata.appendChild(description)
-        // }
-        var provider = document.createElement("p")
-        provider.innerHTML = item["provider.name"]
-        metadata.appendChild(provider)
-        if (item["sourceResource.subject.name"]) {
-          var subjects = document.createElement("ul")
-          subjects.classList.add("subjects")
-          item["sourceResource.subject.name"].forEach(s => {
-            var subject = document.createElement("li")
-            subject.innerHTML = s
-            subjects.appendChild(subject)
-          })
-          metadata.appendChild(subjects)
-        }
-        // console.log(item)
-      };
-      xmlhttp.send()
+      // xmlhttp.open(method, url, true);
+      // xmlhttp.onload = function (data) {
+      //   var item = JSON.parse(data.target.response).docs[0]
+      //   // console.log(item)
+      // };
+      // xmlhttp.send()
     }
     function loadColors(file) {
       var xmlhttp = new XMLHttpRequest(),
@@ -243,7 +273,7 @@
       xmlhttp.open(method, url, true);
       xmlhttp.onload = function (data) {
         JSON.parse(data.target.response).imgdata[1].clusters.cluster.forEach((c, index) => {
-          expansion.getElementsByTagName("li")[index].setAttribute("style", "width: " + (c[0].f * 100) + "%; background-color: " + c[2].hex[0].hex + ";")
+          expansionElement.getElementsByTagName("li")[index].setAttribute("style", "width: " + (c[0].f * 100) + "%; background-color: " + c[2].hex[0].hex + ";")
         })
       };
       xmlhttp.send()
