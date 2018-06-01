@@ -171,6 +171,12 @@
       var provider = document.createElement("p")
       provider.innerText = meta["provider.name"]
       itemMeta.appendChild(provider)
+      if (meta["sourceResource.date"]) {
+        var date = document.createElement("p")
+        date.classList.add("date")
+        date.innerText = (Array.isArray(meta["sourceResource.date"])) ? meta["sourceResource.date"][0].displayDate : meta["sourceResource.date"].displayDate
+        itemMeta.appendChild(date)
+      }
       item.appendChild(itemMeta)
       grid.appendChild(item)
       item.onclick = gridItemClick;
@@ -230,6 +236,12 @@
       //   description.innerHTML = item["sourceResource.description"];
       //   metadataElement.appendChild(description)
       // }
+      if (item["sourceResource.date"]) {
+        var date = document.createElement("p")
+        date.classList.add("date")
+        date.innerText = (Array.isArray(item["sourceResource.date"])) ? item["sourceResource.date"][0].displayDate : item["sourceResource.date"].displayDate
+        metadataElement.appendChild(date)
+      }
       var provider = document.createElement("a")
       provider.classList.add("provider")
       provider.innerHTML = item["provider.name"]

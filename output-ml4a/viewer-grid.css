@@ -21,6 +21,7 @@ a {
 
 .item {
   border: 0.25rem solid transparent;
+  cursor: pointer;
   font-size: 1.75rem;
 }
 
@@ -55,6 +56,11 @@ a {
 
 .item-metadata p {
   font-size: 0.75rem;
+}
+
+.date {
+  color: gray;
+  font-style: italic;
 }
 
 .checkbox {
