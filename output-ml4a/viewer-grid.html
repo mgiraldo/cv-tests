@@ -11,11 +11,6 @@
 
 <body>
 
-  <div class="tools">
-    <button id="mode">single selection</button>
-    <button id="clear">clear selection</button>
-  </div>
-
   <div id="grid" class="grid">
   </div>
 
@@ -28,19 +23,7 @@
     var points, imagexy = {};
     var startX, startY, dragSelection = [], selectedCells = [], selectedHash = {}, selectionMode = "expand", isSelecting = false;
     var expanded
-    var btnMode = document.getElementById("mode")
-    var btnClear = document.getElementById("clear")
-
-    btnClear.onclick = clearSelection
-    btnMode.onclick = (e) => {
-      if (selectionMode === "expand") {
-        selectionMode = "multiple"
-        mode.innerHTML = "multiple selection"
-      } else {
-        selectionMode = "expand"
-        mode.innerHTML = "single selection"
-      }
-    }
+    var intersectionObserver
 
     window.onresize = function (e) {
       setRow()
@@ -113,18 +96,6 @@
       metadataElement.classList.add("metadata")
       main.appendChild(metadataElement)
       expansionElement.appendChild(main)
-      var add = document.createElement("div");
-      add.innerHTML = "add item"
-      add.classList.add("add")
-      add.setAttribute("data-id", id)
-      add.setAttribute("data-point", point)
-      add.onclick = (e) => {
-        var p = e.target.getAttribute("data-point")
-        var i = e.target.getAttribute("data-id")
-        // console.log(p, i, e)
-        addCell(p, i)
-      }
-      expansionElement.appendChild(add)
       sibling.insertAdjacentElement("afterend", expansionElement);
       loadColors(colorurl)
       getMetadata(id)
@@ -156,11 +127,23 @@
         url = './colors-v4-tSNE-gridwide-points.json';
       xmlhttp.open(method, url, true);
       xmlhttp.onload = function (data) {
+        createObserver()
         points = JSON.parse(data.target.response)
         points.sort((a, b) => a.point[1] < b.point[1] ? -1 : (a.point[1] > b.point[1] ? 1 : (a.point[0] < b.point[0] ? -1 : (a.point[0] > b.point[0] ? 1 : 0))))
         points.forEach(p => createThumbnail(p))
       };
       xmlhttp.send()
+    }
+    function createObserver() {
+      intersectionObserver = new IntersectionObserver((entries, self) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            showImage(e.target)
+          } else {
+            hideImage(e.target)
+          }
+        })
+      }, { root: null, threshold: 0.1, rootMargin: '20px' })
     }
     function createThumbnail(p) {
       var item = document.createElement("div")
@@ -173,13 +156,14 @@
       item.setAttribute("id", id)
       item.setAttribute("data-point", p.point.toString())
       var itemImg = new Image();
-      itemImg.src = url
+      itemImg.setAttribute("data-src", url)
       item.appendChild(itemImg)
       var itemMeta = document.createElement("div")
       itemMeta.classList.add("item-metadata")
       var checkbox = document.createElement("input")
       checkbox.setAttribute("type", "checkbox")
       checkbox.classList.add("checkbox")
+      checkbox.onclick = (e) => e.stopPropagation()
       itemMeta.appendChild(checkbox)
       var title = document.createElement("h2")
       title.innerText = meta["sourceResource.title"]
@@ -190,7 +174,16 @@
       item.appendChild(itemMeta)
       grid.appendChild(item)
       item.onclick = gridItemClick;
+      intersectionObserver.observe(item)
       // imagexy[p.point[0] + "," + p.point[1]] = p.path
+    }
+    function showImage(target) {
+      var img = target.childNodes.item(0)
+      img.setAttribute("src", img.getAttribute("data-src"))
+    }
+    function hideImage(target) {
+      var img = target.childNodes.item(0)
+      img.setAttribute("src", "")
     }
     function addCell(cell, id) {
       if (selectedHash[cell]) return;
