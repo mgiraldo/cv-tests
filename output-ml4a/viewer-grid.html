@@ -14,6 +14,8 @@
   <div id="grid" class="grid">
   </div>
 
+  <script src="localforage.min.js" type="text/javascript"></script>
+
   <script type="text/javascript">
     var grid = document.getElementById("grid")
     var metadata, metadataIds
@@ -106,15 +108,6 @@
       var point = this.getAttribute("data-point")
       var id = this.getAttribute("data-id");
       var selected = selectedHash[point] === id;
-      // console.log(point, id, selected)
-      if (selected && selectionMode === "multiple") {
-        removeCell(point)
-        return
-      }
-      if (selectionMode === "multiple") {
-        addCell(point, id)
-        return
-      }
       // console.log(point)
       var url = this.getAttribute("data-url");
       var colorurl = "/output-colors" + url.replace("/images/scaled", "").replace(".jpg", ".json")
@@ -162,8 +155,10 @@
       itemMeta.classList.add("item-metadata")
       var checkbox = document.createElement("input")
       checkbox.setAttribute("type", "checkbox")
+      checkbox.setAttribute("data-id", id)
+      checkbox.setAttribute("data-point", p.point.toString())
       checkbox.classList.add("checkbox")
-      checkbox.onclick = (e) => e.stopPropagation()
+      checkbox.onclick = checkItem
       itemMeta.appendChild(checkbox)
       var title = document.createElement("h2")
       title.innerText = meta["sourceResource.title"]
@@ -196,7 +191,7 @@
       selectedHash[cell] = id;
       selectedCells.push(cell)
       selectedCells.sort()
-      drawSelection()
+      localforage.setItem('selectedHash', selectedHash)
     }
     function removeCell(cell) {
       var id = selectedHash[cell]
@@ -208,6 +203,19 @@
         }
       })
       if (id) clearCell(id)
+      localforage.setItem('selectedHash', selectedHash)
+    }
+    function checkItem(e) {
+      e.stopPropagation() // prevents from opening/closing expansion
+      var point = this.getAttribute("data-point")
+      var id = this.getAttribute("data-id");
+      var selected = this.checked;
+      // console.log(this, point, id, selected)
+      if (selected) {
+        addCell(point, id)
+      } else {
+        removeCell(point)
+      }
     }
     function clearSelection() {
       Object.values(selectedHash).forEach(id => {
