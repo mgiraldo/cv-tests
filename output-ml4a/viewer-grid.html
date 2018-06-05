@@ -11,6 +11,19 @@
 
 <body>
 
+  <div class="toolbar">
+    <div class="list-name-tools">
+      <h1 class="list-name" contenteditable="false">Untitled list</h1>
+      <button class="list-edit">Edit</button>
+    </div>
+    <div class="list-details">
+      <span class="list-count">1 item</span>
+      <ul class="list-items">
+        <li class="list-item">[]</li>
+      </ul>
+    </div>
+  </div>
+
   <div id="grid" class="grid">
   </div>
 
@@ -115,6 +128,27 @@
       setRow()
     }
     function init() {
+      var listName = document.getElementsByClassName("list-name").item(0)
+      var listEdit = document.getElementsByClassName("list-edit").item(0)
+      listName.onfocus = listName.onclick = (e) => {
+        listName.contentEditable = "true"
+        listEdit.classList.add("hidden")
+      }
+      listName.onblur = (e) => {
+        listName.contentEditable = "false"
+        listEdit.classList.remove("hidden")
+        if (listName.innerText.trim() === "") listName.innerText = "Untitled list"
+      }
+      listEdit.onclick = (e) => {
+        listName.contentEditable = "true"
+        listName.focus()
+        var s = window.getSelection(),
+          r = document.createRange();
+        r.selectNode(listName);
+        s.removeAllRanges();
+        s.addRange(r);
+        console.log(s)
+      }
       var xmlhttp = new XMLHttpRequest(),
         method = 'GET',
         url = './colors-v4-tSNE-gridwide-points.json';
@@ -150,7 +184,12 @@
       item.setAttribute("data-point", p.point.toString())
       var itemImg = new Image();
       itemImg.setAttribute("data-src", url)
-      item.appendChild(itemImg)
+      var imgLink = document.createElement("a")
+      imgLink.setAttribute("href", "#")
+      imgLink.classList.add("item-link")
+      imgLink.onclick = imageLinkClick
+      imgLink.appendChild(itemImg)
+      item.appendChild(imgLink)
       var itemMeta = document.createElement("div")
       itemMeta.classList.add("item-metadata")
       var checkbox = document.createElement("input")
@@ -178,8 +217,11 @@
       intersectionObserver.observe(item)
       // imagexy[p.point[0] + "," + p.point[1]] = p.path
     }
+    function imageLinkClick(e) {
+      e.preventDefault()
+    }
     function showImage(target) {
-      var img = target.childNodes.item(0)
+      var img = target.childNodes.item(0).childNodes.item(0)
       img.setAttribute("src", img.getAttribute("data-src"))
     }
     function hideImage(target) {

@@ -12,6 +12,53 @@ a {
   display: none;
 }
 
+.toolbar {
+  background: white;
+  border-bottom: 0.05rem solid gray;
+  padding: 0.25rem 1rem 1rem;
+  position: fixed;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.list-name-tools {
+  align-items: baseline;
+  display: flex;
+}
+
+.list-name {
+  font-size: 1.5rem;
+}
+
+.list-edit {
+  background-color: transparent;
+  border: none;
+  color: #555;
+  font-size: 0.75rem;
+  font-weight: normal;
+}
+
+.list-name[contenteditable="true"]:focus {
+  color: #555;
+  font-style: italic;
+}
+
+.list-details {
+  display: flex;
+}
+
+.list-items {
+  display: flex;
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+.list-item {
+  margin-left: 1rem;
+}
+
 .grid {
   display: grid;
   grid-gap: 1rem 0.25rem;
@@ -29,8 +76,14 @@ a {
   border-color: orange;
 }
 
-.item img {
+.item-link {
+  display: block;
   height: 10rem;
+  width: 100%;
+}
+
+.item img {
+  height: 100%;
   object-fit: contain;
   pointer-events: none;
   width: 100%;
