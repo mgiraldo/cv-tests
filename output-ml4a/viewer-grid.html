@@ -17,9 +17,10 @@
       <button class="list-edit">Edit</button>
     </div>
     <div class="list-details">
-      <span class="list-count">1 item</span>
+      <span class="list-count">0 items</span>
       <ul class="list-items">
       </ul>
+      <button class="list-clear hidden">Clear</button>
     </div>
   </div>
 
@@ -33,6 +34,7 @@
     var grid = document.getElementById("grid")
     var listNameElement = document.getElementsByClassName("list-name").item(0)
     var listEditElement = document.getElementsByClassName("list-edit").item(0)
+    var listClearElement = document.getElementsByClassName("list-clear").item(0)
     var metadata, metadataIds
     var expansionElement, metadataElement
     var last_row = -1;
@@ -161,12 +163,19 @@
         s.removeAllRanges();
         s.addRange(r);
       }
+      listClearElement.onclick = (e) => {
+        clearSelection()
+      }
       updateToolbar()
     }
     function updateToolbar() {
       var countElement = document.getElementsByClassName("list-count").item(0)
       var listElement = document.getElementsByClassName("list-items").item(0)
       var count = Object.keys(selectedHash).length
+      listClearElement.classList.add("hidden")
+      if (count > 0) {
+        listClearElement.classList.remove("hidden")
+      }
       countElement.innerText = count !== 1 ? count + " items" : count + " item";
       while (listElement.firstChild) {
         listElement.removeChild(listElement.firstChild)
@@ -304,6 +313,7 @@
         clearCell(id)
       })
       selectedHash = {}
+      saveList()
     }
     function clearCell(id) {
       document.getElementById("checkbox-" + id).checked = false

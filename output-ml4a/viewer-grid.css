@@ -32,7 +32,7 @@ a {
   font-size: 1.5rem;
 }
 
-.list-edit {
+.list-edit, .list-clear {
   background-color: transparent;
   border: none;
   color: #555;
@@ -46,18 +46,20 @@ a {
 }
 
 .list-details {
+  align-items: center;
   display: flex;
 }
 
 .list-items {
   display: flex;
+  height: 1.5rem;
   list-style-type: none;
   margin: 0;
   padding: 0;
 }
 
 .list-item {
-  border: 0.1rem solid gray;
+  border: 1px solid gray;
   cursor: pointer;
   height: 1.5rem;
   margin-left: 0.5rem;
