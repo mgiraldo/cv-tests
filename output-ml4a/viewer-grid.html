@@ -176,12 +176,13 @@
         var thumb = document.createElement("li")
         var img = new Image()
         img.src = "/images/scaled/" + id + ".jpg"
+        img.setAttribute("data-id", id)
         thumb.classList.add("list-item")
         thumb.appendChild(img)
         listElement.appendChild(thumb)
         thumb.onclick = (e) => {
-          location.href = "#item-" + id
-          window.scrollBy(0, -160)
+          var thumbId = e.target.getAttribute("data-id")
+          window.scrollTo(0, document.getElementById("item-" + thumbId).offsetTop)
         }
       })
     }
