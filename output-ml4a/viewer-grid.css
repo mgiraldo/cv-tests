@@ -56,7 +56,16 @@ a {
 }
 
 .list-item {
-  margin-left: 1rem;
+  border: 0.1rem solid gray;
+  height: 1.5rem;
+  margin-left: 0.5rem;
+  width: 1.5rem;
+}
+
+.list-item img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
 }
 
 .grid {

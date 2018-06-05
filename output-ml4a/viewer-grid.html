@@ -19,7 +19,6 @@
     <div class="list-details">
       <span class="list-count">1 item</span>
       <ul class="list-items">
-        <li class="list-item">[]</li>
       </ul>
     </div>
   </div>
@@ -31,30 +30,44 @@
 
   <script type="text/javascript">
     var grid = document.getElementById("grid")
+    var listNameElement = document.getElementsByClassName("list-name").item(0)
+    var listEditElement = document.getElementsByClassName("list-edit").item(0)
     var metadata, metadataIds
     var expansionElement, metadataElement
     var last_row = -1;
     var last_col = -1;
     var points, imagexy = {};
-    var startX, startY, dragSelection = [], selectedCells = [], selectedHash = {}, selectionMode = "expand", isSelecting = false;
+    var listName = "", selectedHash = {};
     var expanded
     var intersectionObserver
+
+    localforage.iterate((value, key, index) => {
+      if (key === "listName") listName = value;
+      if (key === "selectedHash") selectedHash = value;
+    }).then((value) => {
+      if (listName !== "") listNameElement.innerText = listName
+      getItems()
+    }).catch((err) => {
+      console.error(err)
+    })
 
     window.onresize = function (e) {
       setRow()
     }
 
-    var xmlhttp = new XMLHttpRequest(),
-      method = 'GET',
-      url = './metadata.min.json';
-    xmlhttp.open(method, url, true);
-    xmlhttp.onload = function (data) {
-      metadata = {}
-      var temp = JSON.parse(data.target.response)
-      temp.forEach(t => metadata = Object.assign(metadata, t))
-      init();
-    };
-    xmlhttp.send()
+    function getItems() {
+      var xmlhttp = new XMLHttpRequest(),
+        method = 'GET',
+        url = './metadata.min.json';
+      xmlhttp.open(method, url, true);
+      xmlhttp.onload = function (data) {
+        metadata = {}
+        var temp = JSON.parse(data.target.response)
+        temp.forEach(t => metadata = Object.assign(metadata, t))
+        init();
+      };
+      xmlhttp.send()
+    }
 
     function setRow() {
       if (!expanded) return;
@@ -120,35 +133,55 @@
     function gridItemClick(e) {
       var point = this.getAttribute("data-point")
       var id = this.getAttribute("data-id");
-      var selected = selectedHash[point] === id;
       // console.log(point)
       var url = this.getAttribute("data-url");
       var colorurl = "/output-colors" + url.replace("/images/scaled", "").replace(".jpg", ".json")
       createExpansion(this, url, colorurl, id, point)
       setRow()
     }
-    function init() {
-      var listName = document.getElementsByClassName("list-name").item(0)
-      var listEdit = document.getElementsByClassName("list-edit").item(0)
-      listName.onfocus = listName.onclick = (e) => {
-        listName.contentEditable = "true"
-        listEdit.classList.add("hidden")
+    function initToolbar() {
+      listNameElement.onfocus = listNameElement.onclick = (e) => {
+        listNameElement.contentEditable = "true"
+        listEditElement.classList.add("hidden")
       }
-      listName.onblur = (e) => {
-        listName.contentEditable = "false"
-        listEdit.classList.remove("hidden")
-        if (listName.innerText.trim() === "") listName.innerText = "Untitled list"
+      listNameElement.onchange = listNameElement.onblur = (e) => {
+        listNameElement.contentEditable = "false"
+        listEditElement.classList.remove("hidden")
+        if (listNameElement.innerText.trim() === "") listNameElement.innerText = "Untitled list"
+        listName = listNameElement.innerText
+        saveList()
       }
-      listEdit.onclick = (e) => {
-        listName.contentEditable = "true"
-        listName.focus()
+      listEditElement.onclick = (e) => {
+        listNameElement.contentEditable = "true"
+        listNameElement.focus()
         var s = window.getSelection(),
           r = document.createRange();
-        r.selectNode(listName);
+        r.selectNode(listNameElement);
         s.removeAllRanges();
         s.addRange(r);
-        console.log(s)
       }
+      updateToolbar()
+    }
+    function updateToolbar() {
+      var countElement = document.getElementsByClassName("list-count").item(0)
+      var listElement = document.getElementsByClassName("list-items").item(0)
+      var count = Object.keys(selectedHash).length
+      countElement.innerText = count !== 1 ? count + " items" : count + " item";
+      while (listElement.firstChild) {
+        listElement.removeChild(listElement.firstChild)
+      }
+      Object.keys(selectedHash).forEach(k => {
+        var id = selectedHash[k]
+        var thumb = document.createElement("li")
+        var img = new Image()
+        img.src = "/images/scaled/" + id + ".jpg"
+        thumb.classList.add("list-item")
+        thumb.appendChild(img)
+        listElement.appendChild(thumb)
+      })
+    }
+    function init() {
+      initToolbar()
       var xmlhttp = new XMLHttpRequest(),
         method = 'GET',
         url = './colors-v4-tSNE-gridwide-points.json';
@@ -180,7 +213,7 @@
       item.classList.add("item")
       item.setAttribute("data-url", url)
       item.setAttribute("data-id", id)
-      item.setAttribute("id", id)
+      item.setAttribute("id", "item-" + id)
       item.setAttribute("data-point", p.point.toString())
       var itemImg = new Image();
       itemImg.setAttribute("data-src", url)
@@ -195,7 +228,11 @@
       var checkbox = document.createElement("input")
       checkbox.setAttribute("type", "checkbox")
       checkbox.setAttribute("data-id", id)
+      checkbox.setAttribute("id", "checkbox-" + id)
       checkbox.setAttribute("data-point", p.point.toString())
+      if (selectedHash[p.point.toString()]) {
+        checkbox.checked = true;
+      }
       checkbox.classList.add("checkbox")
       checkbox.onclick = checkItem
       itemMeta.appendChild(checkbox)
@@ -231,21 +268,18 @@
     function addCell(cell, id) {
       if (selectedHash[cell]) return;
       selectedHash[cell] = id;
-      selectedCells.push(cell)
-      selectedCells.sort()
+      saveList()
+    }
+    function saveList() {
+      localforage.setItem('listName', listNameElement.innerText)
       localforage.setItem('selectedHash', selectedHash)
+      updateToolbar()
     }
     function removeCell(cell) {
       var id = selectedHash[cell]
       delete selectedHash[cell];
-      selectedCells.forEach((c, index) => {
-        if (c === cell) {
-          selectedCells.splice(index, 1);
-          return;
-        }
-      })
       if (id) clearCell(id)
-      localforage.setItem('selectedHash', selectedHash)
+      saveList()
     }
     function checkItem(e) {
       e.stopPropagation() // prevents from opening/closing expansion
@@ -264,14 +298,13 @@
         clearCell(id)
       })
       selectedHash = {}
-      selectedCells = []
     }
     function clearCell(id) {
-      document.getElementById(id).classList.remove("selected")
+      document.getElementById("checkbox-" + id).checked = false
     }
     function drawSelection() {
       Object.values(selectedHash).forEach(id => {
-        var item = document.getElementById(id).classList.add("selected")
+        var item = document.getElementById("checkbox-" + id).checked = true
       })
     }
     function getMetadata(id) {
