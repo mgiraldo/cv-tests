@@ -16,6 +16,7 @@
     <div class="list-name-tools">
       <h1 class="list-name" contenteditable="false">Untitled list</h1>
       <button class="list-edit">Edit</button>
+      <button class="list-delete hidden">Delete</button>
     </div>
     <div class="list-details">
       <span class="list-count">0 items</span>
@@ -39,6 +40,7 @@
     var listEditElement = document.getElementsByClassName("list-edit").item(0)
     var listClearElement = document.getElementsByClassName("list-clear").item(0)
     var listNewElement = document.getElementsByClassName("list-new").item(0)
+    var listDeleteElement = document.getElementsByClassName("list-delete").item(0)
     var selectElement = document.getElementsByClassName("list-selector").item(0)
     var metadata, metadataIds
     var expansionElement, metadataElement
@@ -50,14 +52,15 @@
     var intersectionObserver
 
     localforage.iterate((value, key, index) => {
+      if (!value.listName) return;
       lists.push({ id: key, name: value.listName, count: Object.keys(value.selectedHash).length });
     }).then((value) => {
       if (lists.length === 0) {
         createList()
       } else {
+        listIndex = 0
         createSelector()
         // get the first list
-        listIndex = 0
         loadList(lists[0].id)
       }
       getItems()
@@ -80,12 +83,26 @@
       })
     }
 
+    function deleteList() {
+      // get a new list
+      var tempList = lists.filter(l => l.id !== listId)[0]
+      // delete the current list
+      lists.splice(listIndex, 1)
+      localforage.removeItem(listId).then(() => {
+        clearSelection(false)
+        createSelector()
+        loadList(tempList.id)
+      })
+    }
+
     function createList() {
       clearSelection(false)
       listName = defaultName
       listId = UUID.generate()
-      selectedHash = {}
       lists.push({ id: listId, name: listName, count: 0 })
+      selectElement.add(createOption(listName + " (0 items)", listId))
+      listIndex = lists.length - 1
+      selectElement.selectedIndex = listIndex
       saveList()
     }
 
@@ -201,12 +218,12 @@
         s.removeAllRanges();
         s.addRange(r);
       }
-      listClearElement.onclick = (e) => {
-        clearSelection()
-      }
-      listNewElement.onclick = (e) => {
-        createList()
-      }
+      listClearElement.onclick = (e) => clearSelection()
+
+      listNewElement.onclick = (e) => createList()
+
+      listDeleteElement.onclick = (e) => deleteList()
+
       selectElement.onchange = (e) => {
         listIndex = e.target.selectedIndex
         loadList(e.target.value)
@@ -217,7 +234,7 @@
       while (selectElement.firstChild) {
         selectElement.removeChild(selectElement.firstChild)
       }
-      lists.forEach(l => selectElement.appendChild(createOption(l.name + " (" + l.count + (l.count === 1 ? " item" : " items") + ")", l.id)))
+      lists.forEach(l => selectElement.add(createOption(l.name + " (" + l.count + (l.count === 1 ? " item" : " items") + ")", l.id)))
       selectElement.selectedIndex = 0
     }
     function updateSelector() {
@@ -231,6 +248,8 @@
       return opt
     }
     function updateToolbar() {
+      listDeleteElement.classList.add("hidden")
+      if (lists.length > 1) listDeleteElement.classList.remove("hidden")
       var countElement = document.getElementsByClassName("list-count").item(0)
       var listElement = document.getElementsByClassName("list-items").item(0)
       var count = Object.keys(selectedHash).length
@@ -379,16 +398,18 @@
         clearCell(id)
       })
       selectedHash = {}
-      lists[listIndex].count = 0
+      if (lists[listIndex]) lists[listIndex].count = 0
       if (save) saveList()
     }
     function clearCell(id) {
-      document.getElementById("checkbox-" + id).checked = false
+      var item = document.getElementById("checkbox-" + id)
+      if (item) item.checked = false
       lists[listIndex].count--
     }
     function drawSelection() {
       Object.values(selectedHash).forEach(id => {
-        var item = document.getElementById("checkbox-" + id).checked = true
+        var item = document.getElementById("checkbox-" + id)
+        if (item) item.checked = true
       })
     }
     function getMetadata(id) {
