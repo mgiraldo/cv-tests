@@ -12,6 +12,7 @@
 <body>
 
   <div class="toolbar">
+    <button class="list-new">New List</button>
     <div class="list-name-tools">
       <h1 class="list-name" contenteditable="false">Untitled list</h1>
       <button class="list-edit">Edit</button>
@@ -22,6 +23,8 @@
       </ul>
       <button class="list-clear hidden">Clear</button>
     </div>
+    <select name="" class="list-selector">
+    </select>
   </div>
 
   <div id="grid" class="grid">
@@ -35,20 +38,28 @@
     var listNameElement = document.getElementsByClassName("list-name").item(0)
     var listEditElement = document.getElementsByClassName("list-edit").item(0)
     var listClearElement = document.getElementsByClassName("list-clear").item(0)
+    var listNewElement = document.getElementsByClassName("list-new").item(0)
+    var selectElement = document.getElementsByClassName("list-selector").item(0)
     var metadata, metadataIds
     var expansionElement, metadataElement
     var last_row = -1;
     var last_col = -1;
     var points, imagexy = {};
-    var defaultName = "Untitled list", listName = "", selectedHash = {};
+    var defaultName = "Untitled list", listIndex = -1, listId = "", listName = "", selectedHash = {}, lists = [];
     var expanded
     var intersectionObserver
 
     localforage.iterate((value, key, index) => {
-      if (key === "listName") listName = value;
-      if (key === "selectedHash") selectedHash = value;
-      updateName()
+      lists.push({ id: key, name: value.listName, count: Object.keys(value.selectedHash).length });
     }).then((value) => {
+      if (lists.length === 0) {
+        createList()
+      } else {
+        createSelector()
+        // get the first list
+        listIndex = 0
+        loadList(lists[0].id)
+      }
       getItems()
     }).catch((err) => {
       console.error(err)
@@ -56,6 +67,26 @@
 
     window.onresize = function (e) {
       setRow()
+    }
+
+    function loadList(id) {
+      clearSelection(false)
+      localforage.getItem(id).then(value => {
+        listName = value.listName
+        listId = id
+        selectedHash = value.selectedHash
+        lists[listIndex].count = Object.keys(selectedHash).length
+        saveList()
+      })
+    }
+
+    function createList() {
+      clearSelection(false)
+      listName = defaultName
+      listId = UUID.generate()
+      selectedHash = {}
+      lists.push({ id: listId, name: listName, count: 0 })
+      saveList()
     }
 
     function updateName() {
@@ -158,6 +189,7 @@
         listNameElement.contentEditable = "false"
         listEditElement.classList.remove("hidden")
         listName = listNameElement.innerText.trim()
+        lists[listIndex].name = listName
         saveList()
       }
       listEditElement.onclick = (e) => {
@@ -172,7 +204,31 @@
       listClearElement.onclick = (e) => {
         clearSelection()
       }
+      listNewElement.onclick = (e) => {
+        createList()
+      }
+      selectElement.onchange = (e) => {
+        listIndex = e.target.selectedIndex
+        loadList(e.target.value)
+      }
       updateToolbar()
+    }
+    function createSelector() {
+      while (selectElement.firstChild) {
+        selectElement.removeChild(selectElement.firstChild)
+      }
+      lists.forEach(l => selectElement.appendChild(createOption(l.name + " (" + l.count + (l.count === 1 ? " item" : " items") + ")", l.id)))
+      selectElement.selectedIndex = 0
+    }
+    function updateSelector() {
+      var count = Object.keys(selectedHash).length
+      selectElement.item(selectElement.selectedIndex).innerText = listName + " (" + count + (count === 1 ? " item" : " items") + ")"
+    }
+    function createOption(name, value) {
+      var opt = document.createElement("option")
+      opt.setAttribute("value", value)
+      opt.innerText = name
+      return opt
     }
     function updateToolbar() {
       var countElement = document.getElementsByClassName("list-count").item(0)
@@ -289,13 +345,16 @@
     function addCell(cell, id) {
       if (selectedHash[cell]) return;
       selectedHash[cell] = id;
+      lists[listIndex].count++
       saveList()
     }
     function saveList() {
-      localforage.setItem('listName', listName)
-      localforage.setItem('selectedHash', selectedHash)
+      var savedList = { listName: listName, selectedHash: selectedHash }
+      localforage.setItem(listId, savedList)
       updateName()
       updateToolbar()
+      updateSelector()
+      drawSelection()
     }
     function removeCell(cell) {
       var id = selectedHash[cell]
@@ -315,15 +374,17 @@
         removeCell(point)
       }
     }
-    function clearSelection() {
+    function clearSelection(save = true) {
       Object.values(selectedHash).forEach(id => {
         clearCell(id)
       })
       selectedHash = {}
-      saveList()
+      lists[listIndex].count = 0
+      if (save) saveList()
     }
     function clearCell(id) {
       document.getElementById("checkbox-" + id).checked = false
+      lists[listIndex].count--
     }
     function drawSelection() {
       Object.values(selectedHash).forEach(id => {
@@ -389,6 +450,27 @@
       };
       xmlhttp.send()
     }
+    /**
+   * Fast UUID generator, RFC4122 version 4 compliant.
+   * @author Jeff Ward (jcward.com).
+   * @license MIT license
+   * @link http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript/21963136#21963136
+   **/
+    var UUID = (function () {
+      var self = {};
+      var lut = []; for (var i = 0; i < 256; i++) { lut[i] = (i < 16 ? '0' : '') + (i).toString(16); }
+      self.generate = function () {
+        var d0 = Math.random() * 0xffffffff | 0;
+        var d1 = Math.random() * 0xffffffff | 0;
+        var d2 = Math.random() * 0xffffffff | 0;
+        var d3 = Math.random() * 0xffffffff | 0;
+        return lut[d0 & 0xff] + lut[d0 >> 8 & 0xff] + lut[d0 >> 16 & 0xff] + lut[d0 >> 24 & 0xff] + '-' +
+          lut[d1 & 0xff] + lut[d1 >> 8 & 0xff] + '-' + lut[d1 >> 16 & 0x0f | 0x40] + lut[d1 >> 24 & 0xff] + '-' +
+          lut[d2 & 0x3f | 0x80] + lut[d2 >> 8 & 0xff] + '-' + lut[d2 >> 16 & 0xff] + lut[d2 >> 24 & 0xff] +
+          lut[d3 & 0xff] + lut[d3 >> 8 & 0xff] + lut[d3 >> 16 & 0xff] + lut[d3 >> 24 & 0xff];
+      }
+      return self;
+    })();
   </script>
 
 </body>

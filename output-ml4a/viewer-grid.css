@@ -15,7 +15,12 @@ a {
 .toolbar {
   background: white;
   border-bottom: 0.05rem solid gray;
-  padding: 0.25rem 1rem 1rem;
+  display: grid;
+  grid-column-gap: 0.5rem;
+  grid-template: 
+                "new name select"
+                "new counter select" auto / 5rem 1fr 10rem;
+  margin: 0.25rem 0.25rem 1rem;
   position: fixed;
   position: -webkit-sticky;
   position: sticky;
@@ -23,13 +28,24 @@ a {
   z-index: 1;
 }
 
+.list-new {
+  background-color: orange;
+  border: none;
+  color: white;
+  cursor: pointer;
+  grid-area: new;
+}
+
 .list-name-tools {
   align-items: baseline;
   display: flex;
+  grid-area: name;
 }
 
 .list-name {
   font-size: 1.5rem;
+  line-height: 1.5;
+  margin: 0;
 }
 
 .list-edit, .list-clear {
@@ -41,6 +57,10 @@ a {
   font-weight: normal;
 }
 
+.list-clear {
+  color: #a00;
+}
+
 .list-name[contenteditable="true"]:focus {
   color: #555;
   font-style: italic;
@@ -49,6 +69,8 @@ a {
 .list-details {
   align-items: center;
   display: flex;
+  grid-area: counter;
+  margin-bottom: 0.5rem;
 }
 
 .list-items {
@@ -71,6 +93,12 @@ a {
   height: 100%;
   object-fit: cover;
   width: 100%;
+}
+
+.list-selector {
+  align-self: center;
+  font-size: 0.9rem;
+  grid-area: select;
 }
 
 .grid {
