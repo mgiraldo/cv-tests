@@ -266,7 +266,8 @@
         var id = selectedHash[k]
         var thumb = document.createElement("li")
         var img = new Image()
-        img.src = "/images/scaled/" + id + ".jpg"
+        // img.src = "/images/scaled/" + id + ".jpg"
+        img.src = "https://dpla-cvtest.s3.amazonaws.com/" + id + ".jpg"
         img.setAttribute("data-id", id)
         thumb.classList.add("list-item")
         thumb.appendChild(img)
@@ -304,8 +305,10 @@
     }
     function createThumbnail(p) {
       var item = document.createElement("div")
-      var url = p.path.replace("/Users/mga/Documents/website/cv", "");
-      var id = url.replace("/images/scaled/", "").replace(".jpg", "")
+      // var url = p.path.replace("/Users/mga/Documents/website/cv", "");
+      var url = p.path.replace("/Users/mga/Documents/website/cv/images/scaled", "https://dpla-cvtest.s3.amazonaws.com");
+      // var id = url.replace("/images/scaled/", "").replace(".jpg", "")
+      var id = url.replace("https://dpla-cvtest.s3.amazonaws.com/", "").replace(".jpg", "")
       var meta = metadata[id]
       item.classList.add("item")
       item.setAttribute("data-url", url)
