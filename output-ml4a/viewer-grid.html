@@ -88,10 +88,11 @@
       var tempList = lists.filter(l => l.id !== listId)[0]
       // delete the current list
       lists.splice(listIndex, 1)
+      listIndex = 0
       localforage.removeItem(listId).then(() => {
         clearSelection(false)
-        createSelector()
         loadList(tempList.id)
+        createSelector()
       })
     }
 
@@ -235,7 +236,7 @@
         selectElement.removeChild(selectElement.firstChild)
       }
       lists.forEach(l => selectElement.add(createOption(l.name + " (" + l.count + (l.count === 1 ? " item" : " items") + ")", l.id)))
-      selectElement.selectedIndex = 0
+      selectElement.selectedIndex = listIndex
     }
     function updateSelector() {
       var count = Object.keys(selectedHash).length

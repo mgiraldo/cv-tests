@@ -69,7 +69,8 @@ a {
   cursor: pointer;
   font-size: 0.9rem;
   margin-left: auto;
-  padding: 0.4rem 1.2rem;
+  margin-top: 0.125rem;
+  padding: 0.25rem 1rem;
 }
 
 .list-name[contenteditable="true"]:focus {
