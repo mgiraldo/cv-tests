@@ -8,7 +8,7 @@ tests done in the [“world war i posters” search](https://dp.la/search?q=worl
 
 use the [`data/download.sh`](data/download.sh) script to get all the thumbnails. the script requires [jq](https://stedolan.github.io/jq/)
 
-## [grid viewer demo](output-ml4a/viewer-grid.html)
+## [grid viewer demo](https://mgiraldo.github.io/cv-tests/output-ml4a/viewer-grid.html)
 
 uses [localForage](https://localforage.github.io/localForage/) for list management
 
