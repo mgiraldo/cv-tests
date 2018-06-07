@@ -16,7 +16,7 @@
     <div class="list-name-tools">
       <h1 class="list-name" contenteditable="false">Untitled list</h1>
       <button class="list-edit">Edit</button>
-      <button class="list-delete hidden">Delete</button>
+      <button class="list-delete">Delete</button>
     </div>
     <div class="list-details">
       <span class="list-count">0 items</span>
@@ -91,7 +91,11 @@
       listIndex = 0
       localforage.removeItem(listId).then(() => {
         clearSelection(false)
-        loadList(tempList.id)
+        if (lists.length > 0) {
+          loadList(tempList.id)
+        } else {
+          createList()
+        }
         createSelector()
       })
     }
@@ -249,8 +253,6 @@
       return opt
     }
     function updateToolbar() {
-      listDeleteElement.classList.add("hidden")
-      if (lists.length > 1) listDeleteElement.classList.remove("hidden")
       var countElement = document.getElementsByClassName("list-count").item(0)
       var listElement = document.getElementsByClassName("list-items").item(0)
       var count = Object.keys(selectedHash).length
@@ -414,7 +416,7 @@
     function clearCell(id) {
       var item = document.getElementById("checkbox-" + id)
       if (item) item.checked = false
-      lists[listIndex].count--
+      if (lists[listIndex]) lists[listIndex].count--
     }
     function drawSelection() {
       Object.values(selectedHash).forEach(id => {
