@@ -333,9 +333,15 @@
       if (selectedHash[p.point.toString()]) {
         checkbox.checked = true;
       }
-      checkbox.classList.add("checkbox")
-      checkbox.onclick = checkItem
-      itemMeta.appendChild(checkbox)
+      var label = document.createElement("label")
+      label.setAttribute("for", "checkbox-" + id)
+      label.classList.add("item-label")
+      var span = document.createElement("span")
+      span.innerText = "Add to list"
+      label.appendChild(checkbox)
+      label.appendChild(span)
+      itemMeta.appendChild(label)
+      checkbox.onclick = label.onclick = checkItem
       var title = document.createElement("h2")
       title.innerText = meta["sourceResource.title"]
       itemMeta.appendChild(title)

@@ -171,8 +171,13 @@ a {
   font-style: italic;
 }
 
-.checkbox {
+.item-label {
   align-self: center;
+}
+
+.item-label span {
+  color: gray;
+  font-size: 0.8rem;
 }
 
 .expanded {
