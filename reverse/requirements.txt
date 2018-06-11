@@ -1,0 +1,8 @@
+simplejson
+scikit-learn
+Pillow
+tqdm
+keras
+tensorflow
+h5py==2.8.0rc1
+unittest2
