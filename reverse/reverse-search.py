@@ -12,13 +12,12 @@ from tqdm import tqdm
 import json
 import PIL
 import urllib, cStringIO
-import argparse
 
 def get_model():
     return keras.applications.VGG16(weights='imagenet', include_top=True)
 
-# process_image will return a numpy array of the pixels to input the network
 def process_image(img):
+    """ will return a numpy array of the pixels to input to the network """
     x = image.img_to_array(img)
     x = np.expand_dims(x, axis=0)
     x = preprocess_input(x)
@@ -72,26 +71,23 @@ def search(x, colors):
     feat = feat_extractor.predict(x)[0]
     all_feats = organize_features(feat, colors)
     feature_values = np.array([x for x in all_feats])
-    feat_pca = pca.fit_transform([feature_values])
+    feat_pca = pca.transform([feature_values])
     distances = [ distance.euclidean(feat_pca, f) for f in pca_features ]
     idx_closest = sorted(range(len(distances)), key=lambda k: distances[k])[0:10]
     files_closest = [images[i] for i in idx_closest]
     print(files_closest)
 
 np.seterr(divide='ignore', invalid='ignore')
-parser = argparse.ArgumentParser(description='Finds closest image to a given image path or url')
-parser.add_argument('-v', '--version', action='version', version='%(prog)s 0.1')
-parser.add_argument('-u', '--url')
-parser.add_argument('-f', '--filename')
-args = parser.parse_args()
 model = get_model()
 feat_extractor = Model(inputs=model.input, outputs=model.get_layer("fc2").output)
 images, pca_features, pca = pickle.load(open('../output-ml4a/colors-v4-features.p', 'r'))
 
 if __name__ == '__main__':
-    if (args.filename):
-        img = get_image(args.filename)
-    if (args.url):
-        img, colors = get_image_url(args.url)
-    x = process_image(img)
-    search(x, colors)
+    while True:
+        url = raw_input('url: ')
+        try:
+            img, colors = get_image_url(url)
+            x = process_image(img)
+            search(x, colors)
+        except IOError:
+            print("error: url is not an image")
