@@ -90,3 +90,7 @@ if __name__ == '__main__':
             search(x, colors)
         except IOError:
             print("error: url is not an image")
+        except ValueError:
+            print("error: url could not be processed")
+        except IndexError:
+            print("error: in keras preprocess_input")
