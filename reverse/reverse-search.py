@@ -13,6 +13,8 @@ import json
 import PIL
 import urllib, cStringIO
 
+COLOR_HOST = 'http://localhost:4567'
+
 def process_image(img):
     """ will return a numpy array of the pixels to input to the network """
     x = image.img_to_array(img)
@@ -27,7 +29,7 @@ def get_image_url(url):
     width_height_tuple = (target_size[1], target_size[0])
     interpolation='nearest'
     img = img.resize(width_height_tuple, PIL.Image.NEAREST)
-    colors_url = 'http://localhost:4567/?url=%s' % url
+    colors_url = '%s/?url=%s' % (COLOR_HOST, url)
     colors_json = json.loads(urllib.urlopen(colors_url).read())
     colors = parse_colors(colors_json)
     return img, colors
@@ -77,7 +79,7 @@ def search(x, colors):
 np.seterr(divide='ignore', invalid='ignore')
 model = keras.applications.VGG16(weights='imagenet', include_top=True)
 feat_extractor = Model(inputs=model.input, outputs=model.get_layer("fc2").output)
-images, pca_features, pca = pickle.load(open('../output-ml4a/colors-v4-features.p', 'r'))
+images, pca_features, pca = pickle.load(open('model.p', 'r'))
 
 if __name__ == '__main__':
     while True:
