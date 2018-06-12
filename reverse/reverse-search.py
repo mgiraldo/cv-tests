@@ -13,9 +13,6 @@ import json
 import PIL
 import urllib, cStringIO
 
-def get_model():
-    return keras.applications.VGG16(weights='imagenet', include_top=True)
-
 def process_image(img):
     """ will return a numpy array of the pixels to input to the network """
     x = image.img_to_array(img)
@@ -78,7 +75,7 @@ def search(x, colors):
     print(files_closest)
 
 np.seterr(divide='ignore', invalid='ignore')
-model = get_model()
+model = keras.applications.VGG16(weights='imagenet', include_top=True)
 feat_extractor = Model(inputs=model.input, outputs=model.get_layer("fc2").output)
 images, pca_features, pca = pickle.load(open('../output-ml4a/colors-v4-features.p', 'r'))
 
