@@ -74,7 +74,7 @@ def search(x, colors):
     feature_values = np.array([x for x in all_feats])
     feat_pca = pca.fit_transform([feature_values])
     distances = [ distance.euclidean(feat_pca, f) for f in pca_features ]
-    idx_closest = sorted(range(len(distances)), key=lambda k: distances[k])[0:5]
+    idx_closest = sorted(range(len(distances)), key=lambda k: distances[k])[0:10]
     files_closest = [images[i] for i in idx_closest]
     print(files_closest)
 
