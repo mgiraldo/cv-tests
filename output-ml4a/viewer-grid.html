@@ -333,7 +333,7 @@
       checkbox.setAttribute("data-id", id)
       checkbox.setAttribute("id", "checkbox-" + id)
       checkbox.setAttribute("data-point", p.point.toString())
-      if (selectedHash[p.point.toString()]) {
+      if (Object.values(selectedHash).indexOf(id) !== -1) {
         checkbox.checked = true;
       }
       var label = document.createElement("label")
