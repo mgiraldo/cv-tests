@@ -10,6 +10,8 @@ use the [`data/download.sh`](data/download.sh) script to get all the thumbnails.
 
 ## [grid viewer demo](https://mgiraldo.github.io/cv-tests/output-ml4a/viewer-grid.html)
 
+## [serendipity viewer demo](https://mgiraldo.github.io/cv-tests/output-ml4a/viewer-serendipity.html)
+
 uses [localForage](https://localforage.github.io/localForage/) for list management
 
 ## more to come soon... ⏳

@@ -4,6 +4,109 @@
   font-size: 16px;
 }
 
+
+.toolbar {
+  background: white;
+  border-bottom: 0.075rem solid gray;
+  display: grid;
+  grid-column-gap: 0.5rem;
+  grid-template: 
+                "new name select"
+                "new counter select" auto / 5rem 1fr 10rem;
+  margin: 0.25rem 0.25rem 1rem;
+  position: fixed;
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.list-new {
+  background-color: orange;
+  border: none;
+  color: white;
+  cursor: pointer;
+  grid-area: new;
+}
+
+.list-name-tools {
+  align-items: baseline;
+  display: flex;
+  grid-area: name;
+}
+
+.list-name {
+  font-size: 1.5rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.list-edit, .list-clear {
+  background-color: transparent;
+  border: none;
+  color: #555;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: normal;
+}
+
+.list-clear {
+  color: #a00;
+}
+
+.list-delete {
+  align-self: start;
+  background-color: #a00;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-left: auto;
+  margin-top: 0.125rem;
+  padding: 0.25rem 1rem;
+}
+
+.list-name[contenteditable="true"]:focus {
+  color: #555;
+  font-style: italic;
+}
+
+.list-details {
+  align-items: center;
+  display: flex;
+  grid-area: counter;
+  margin-bottom: 0.5rem;
+}
+
+.list-items {
+  display: flex;
+  height: 1.5rem;
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+.list-item {
+  border: 1px solid gray;
+  cursor: pointer;
+  height: 1.5rem;
+  margin-left: 0.5rem;
+  width: 1.5rem;
+}
+
+.list-item img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.list-selector {
+  align-self: start;
+  font-size: 0.9rem;
+  grid-area: select;
+  margin-top: 0.25rem;
+}
+
 .grid {
   display: grid;
   grid-gap: 1rem;
@@ -64,4 +167,24 @@
   padding: 0.25rem 0.5rem;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.item-label {
+  align-self: center;
+}
+
+.item-label span {
+  color: gray;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 800px) {
+  .toolbar {
+    grid-template: 
+                "name"
+                "counter" auto / 1fr;
+  }
+  .list-new, .list-delete, .list-items, .list-selector {
+    display: none;
+  }
 }
