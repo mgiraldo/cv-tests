@@ -181,8 +181,9 @@
 @media (max-width: 800px) {
   .toolbar {
     grid-template: 
-                "name"
-                "counter" auto / 1fr;
+    "name"
+    "counter" auto / 1fr;
+    position: static;
   }
   .list-new, .list-delete, .list-items, .list-selector {
     display: none;
