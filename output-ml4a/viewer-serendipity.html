@@ -50,15 +50,16 @@
       var len = keys.length;
       var rnd = Math.floor(Math.random() * len);
       var item = imageHash[keys[rnd]];
-      console.log(item);
+      // console.log(item);
       displayItem(item);
     }
 
     function displayItem(item) {
-      console.log(item);
+      // console.log(item);
       grid.innerHTML = "";
       var main = document.createElement("div");
       var img = new Image();
+      item.url = item.url.replace("/images/scaled/", "https://dpla-cvtest.s3.amazonaws.com/")
       img.src = item.url;
       main.appendChild(img);
       main.classList.add("main");
