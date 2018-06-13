@@ -204,9 +204,9 @@ a {
   grid-column-start: 1;
   grid-column-end: -1;
   grid-row-start: 3;
-  max-height: 100rem;
+  max-height: 50rem;
   overflow: hidden;
-  transition: all 0.1s ease-in;
+  transition: all 0.2s ease-in;
 }
 
 .expansion.collapsed {

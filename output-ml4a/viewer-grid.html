@@ -153,7 +153,18 @@
 
     function createExpansion(sibling, url, colorurl, id, point) {
       var currentExpansion = document.getElementById("expansion")
-      if (currentExpansion) currentExpansion.remove()
+      if (currentExpansion) {
+        // there's already an expanded element
+        currentExpansion.classList.add("collapsed")
+        setTimeout(() => {
+          currentExpansion.remove()
+          showExpansion(sibling, url, colorurl, id, point)
+        }, 200)
+      } else {
+        showExpansion(sibling, url, colorurl, id, point)
+      }
+    }
+    function showExpansion(sibling, url, colorurl, id, point) {
       var currentExpanded = expanded
       if (currentExpanded) {
         currentExpanded.classList.remove("expanded")
@@ -192,6 +203,7 @@
       getMetadata(id)
       expanded = sibling
       setTimeout(() => expansionElement.classList.remove("collapsed"), 10)
+      setRow()
     }
     function gridItemClick(e) {
       var point = this.getAttribute("data-point")
@@ -201,7 +213,6 @@
       // var colorurl = "/output-colors" + url.replace("/images/scaled", "").replace(".jpg", ".json")
       var colorurl = "/output-colors" + url.replace("https://dpla-cvtest.s3.amazonaws.com", "").replace(".jpg", ".json")
       createExpansion(this, url, colorurl, id, point)
-      setRow()
     }
     function initToolbar() {
       listNameElement.onfocus = listNameElement.onclick = (e) => {
