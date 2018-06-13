@@ -214,7 +214,7 @@
 
       xmlhttp.open(method, url, true);
       xmlhttp.onload = function (data) {
-        JSON.parse(data.target.response).imgdata[1].clusters.cluster.forEach(
+        if (data.target.response) JSON.parse(data.target.response).imgdata[1].clusters.cluster.forEach(
           (c, index) => {
             palette
               .getElementsByTagName("li")
