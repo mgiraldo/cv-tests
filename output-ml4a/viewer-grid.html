@@ -198,7 +198,8 @@
       var id = this.getAttribute("data-id");
       // console.log(point)
       var url = this.getAttribute("data-url");
-      var colorurl = "/output-colors" + url.replace("/images/scaled", "").replace(".jpg", ".json")
+      // var colorurl = "/output-colors" + url.replace("/images/scaled", "").replace(".jpg", ".json")
+      var colorurl = "/output-colors" + url.replace("https://dpla-cvtest.s3.amazonaws.com", "").replace(".jpg", ".json")
       createExpansion(this, url, colorurl, id, point)
       setRow()
     }
