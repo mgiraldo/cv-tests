@@ -101,7 +101,7 @@
       child.setAttribute("data-item", item);
       child.classList.add(type);
       var img = new Image();
-      img.src = item.replace("..", "");
+      img.src = item.replace("..", "").replace("/images/scaled/", "https://dpla-cvtest.s3.amazonaws.com/");
       child.appendChild(img);
       grid.appendChild(child);
       child.onclick = closeFarClick;
