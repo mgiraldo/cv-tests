@@ -385,9 +385,9 @@
       var img = target.childNodes.item(0)
       img.setAttribute("src", "")
     }
-    function addCell(cell, id) {
-      if (selectedHash[cell]) return;
-      selectedHash[cell] = id;
+    function addCell(id) {
+      if (selectedHash[id]) return;
+      selectedHash[id] = id;
       lists[listIndex].count++
       saveList()
     }
@@ -412,9 +412,9 @@
       var selected = this.checked;
       // console.log(this, point, id, selected)
       if (selected) {
-        addCell(point, id)
+        addCell(id)
       } else {
-        removeCell(point)
+        removeCell(id)
       }
     }
     function clearSelection(save = true) {

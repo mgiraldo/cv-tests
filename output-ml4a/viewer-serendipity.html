@@ -97,6 +97,26 @@
       saveList()
     }
 
+    function addCell(id) {
+      if (selectedHash[id]) return;
+      selectedHash[id] = id;
+      lists[listIndex].count++
+      saveList()
+    }
+
+    function removeCell(cell) {
+      var id = selectedHash[cell]
+      delete selectedHash[cell];
+      if (id) clearCell(id)
+      saveList()
+    }
+
+    function clearCell(id) {
+      var item = document.getElementById("checkbox-" + id)
+      if (item) item.checked = false
+      if (lists[listIndex]) lists[listIndex].count--
+    }
+
     function saveList() {
       var savedList = { listName: listName, selectedHash: selectedHash }
       localforage.setItem(listId, savedList)
@@ -298,9 +318,9 @@
       var selected = this.checked;
       // console.log(this, point, id, selected)
       if (selected) {
-        addCell(point, id)
+        addCell(id)
       } else {
-        removeCell(point)
+        removeCell(id)
       }
     }
 
