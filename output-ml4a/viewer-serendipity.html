@@ -61,7 +61,7 @@
       }
 
       function displayItem(item) {
-        console.log(item);
+        // console.log(item);
         grid.innerHTML = "";
         var main = document.createElement("div");
         var img = new Image();
@@ -156,14 +156,20 @@
           var provider = document.createElement("p");
           provider.innerHTML = item["provider.name"];
           metadata.appendChild(provider);
-          if (item["sourceResource.subject.name"]) {
+          var itemSubject = item["sourceResource.subject.name"]
+          if (itemSubject) {
             var subjects = document.createElement("ul");
             subjects.classList.add("subjects");
-            item["sourceResource.subject.name"].forEach(s => {
-              var subject = document.createElement("li");
-              subject.innerHTML = s;
-              subjects.appendChild(subject);
-            });
+            if (Array.isArray(itemSubject)){
+            itemSubject.forEach(s => {
+              var subjectElement = document.createElement("li");
+              subjectElement.innerHTML = s;
+              subjects.appendChild(subjectElement);
+            });} else {
+              var subjectElement = document.createElement("li");
+              subjectElement.innerHTML = itemSubject;
+              subjects.appendChild(subjectElement);
+            }
             metadata.appendChild(subjects);
           }
           // console.log(item)
