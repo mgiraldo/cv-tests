@@ -1,411 +1,460 @@
 <!DOCTYPE html>
 <html>
+  <head>
+    <title>serendipity</title>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
+    <meta content="utf-8" http-equiv="encoding" />
+    <meta
+      name="viewport"
+      content="minimum-scale=1.0, width=device-width, initial-scale=1.0"
+    />
+    <link rel="stylesheet" href="viewer-serendipity.css" />
+  </head>
 
-<head>
-  <title>serendipity</title>
-  <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
-  <meta content="utf-8" http-equiv="encoding">
-  <meta name="viewport" content="minimum-scale=1.0, width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="viewer-serendipity.css" />
-</head>
-
-<body>
-
-  <div class="toolbar">
-    <button class="list-new">New List</button>
-    <div class="list-name-tools">
-      <h1 class="list-name" contenteditable="false">Untitled list</h1>
-      <button class="list-edit">Edit</button>
-      <button class="list-delete">Delete</button>
+  <body>
+    <div class="toolbar">
+      <button class="list-new">New List</button>
+      <div class="list-name-tools">
+        <h1 class="list-name" contenteditable="false">Untitled list</h1>
+        <button class="list-edit">Edit</button>
+        <button class="list-delete">Delete</button>
+      </div>
+      <div class="list-details">
+        <span class="list-count">0 items</span>
+        <ul class="list-items"></ul>
+        <button class="list-clear hidden">Clear</button>
+      </div>
+      <select name="" class="list-selector"> </select>
     </div>
-    <div class="list-details">
-      <span class="list-count">0 items</span>
-      <ul class="list-items">
-      </ul>
-      <button class="list-clear hidden">Clear</button>
-    </div>
-    <select name="" class="list-selector">
-    </select>
-  </div>
 
-  <div id="grid" class="grid">
-  </div>
+    <div id="grid" class="grid"></div>
 
-  <script src="localforage.min.js" type="text/javascript"></script>
-  <script type="text/javascript">
-    var grid = document.getElementById("grid");
-    var listNameElement = document.getElementsByClassName("list-name").item(0)
-    var listEditElement = document.getElementsByClassName("list-edit").item(0)
-    var listClearElement = document.getElementsByClassName("list-clear").item(0)
-    var listNewElement = document.getElementsByClassName("list-new").item(0)
-    var listDeleteElement = document.getElementsByClassName("list-delete").item(0)
-    var selectElement = document.getElementsByClassName("list-selector").item(0)
-    var imageHash = {}, selectedHash = {};
-    var metadata, palette;
-    var defaultName = "Untitled list", listIndex = -1, listId = "", listName = "", lists = [];
+    <script src="localforage.min.js" type="text/javascript"></script>
+    <script type="text/javascript">
+      var grid = document.getElementById("grid");
+      var listNameElement = document
+        .getElementsByClassName("list-name")
+        .item(0);
+      var listEditElement = document
+        .getElementsByClassName("list-edit")
+        .item(0);
+      var listClearElement = document
+        .getElementsByClassName("list-clear")
+        .item(0);
+      var listNewElement = document.getElementsByClassName("list-new").item(0);
+      var listDeleteElement = document
+        .getElementsByClassName("list-delete")
+        .item(0);
+      var selectElement = document
+        .getElementsByClassName("list-selector")
+        .item(0);
+      var imageHash = {},
+        selectedHash = {};
+      var metadata, palette;
+      var defaultName = "Untitled list",
+        listIndex = -1,
+        listId = "",
+        listName = "",
+        lists = [];
 
-    localforage.iterate((value, key, index) => {
-      if (!value.listName) return;
-      lists.push({ id: key, name: value.listName, count: Object.keys(value.selectedHash).length });
-    }).then((value) => {
-      if (lists.length === 0) {
-        createList()
-      } else {
-        listIndex = 0
-        createSelector()
-        // get the first list
-        loadList(lists[0].id)
+      localforage
+        .iterate((value, key, index) => {
+          if (!value.listName) return;
+          lists.push({
+            id: key,
+            name: value.listName,
+            count: Object.keys(value.selectedHash).length
+          });
+        })
+        .then(value => {
+          if (lists.length === 0) {
+            createList();
+          } else {
+            listIndex = 0;
+            createSelector();
+            // get the first list
+            loadList(lists[0].id);
+          }
+          getItems();
+        })
+        .catch(err => {
+          console.error(err);
+        });
+
+      function loadList(id) {
+        localforage.getItem(id).then(value => {
+          listName = value.listName;
+          listId = id;
+          selectedHash = value.selectedHash;
+          lists[listIndex].count = Object.keys(selectedHash).length;
+          saveList();
+        });
       }
-      getItems()
-    }).catch((err) => {
-      console.error(err)
-    })
 
-    function loadList(id) {
-      localforage.getItem(id).then(value => {
-        listName = value.listName
-        listId = id
-        selectedHash = value.selectedHash
-        lists[listIndex].count = Object.keys(selectedHash).length
-        saveList()
-      })
-    }
+      function deleteList() {
+        // get a new list
+        var tempList = lists.filter(l => l.id !== listId)[0];
+        // delete the current list
+        lists.splice(listIndex, 1);
+        listIndex = 0;
+        localforage.removeItem(listId).then(() => {
+          if (lists.length > 0) {
+            loadList(tempList.id);
+          } else {
+            createList();
+          }
+          createSelector();
+        });
+      }
 
-    function deleteList() {
-      // get a new list
-      var tempList = lists.filter(l => l.id !== listId)[0]
-      // delete the current list
-      lists.splice(listIndex, 1)
-      listIndex = 0
-      localforage.removeItem(listId).then(() => {
-        if (lists.length > 0) {
-          loadList(tempList.id)
-        } else {
-          createList()
+      function createList() {
+        listName = defaultName;
+        listId = UUID.generate();
+        lists.push({ id: listId, name: listName, count: 0 });
+        selectElement.add(createOption(listName + " (0 items)", listId));
+        listIndex = lists.length - 1;
+        selectElement.selectedIndex = listIndex;
+        saveList();
+      }
+
+      function addCell(id) {
+        if (selectedHash[id]) return;
+        selectedHash[id] = id;
+        lists[listIndex].count++;
+        saveList();
+      }
+
+      function removeCell(cell) {
+        var id = selectedHash[cell];
+        delete selectedHash[cell];
+        if (id) clearCell(id);
+        saveList();
+      }
+
+      function clearCell(id) {
+        var item = document.getElementById("checkbox-" + id);
+        if (item) item.checked = false;
+        if (lists[listIndex]) lists[listIndex].count--;
+      }
+
+      function saveList() {
+        var savedList = { listName: listName, selectedHash: selectedHash };
+        localforage.setItem(listId, savedList);
+        updateName();
+        updateToolbar();
+        updateSelector();
+      }
+
+      function updateName() {
+        var newName = listName;
+        if (newName === "") newName = defaultName;
+        listNameElement.innerText = newName;
+        document.title = newName;
+      }
+
+      function initToolbar() {
+        listNameElement.onfocus = listNameElement.onclick = e => {
+          listNameElement.contentEditable = "true";
+          listEditElement.classList.add("hidden");
+        };
+        listNameElement.onchange = listNameElement.onblur = e => {
+          listNameElement.contentEditable = "false";
+          listEditElement.classList.remove("hidden");
+          listName = listNameElement.innerText.trim();
+          lists[listIndex].name = listName;
+          saveList();
+        };
+        listEditElement.onclick = e => {
+          listNameElement.contentEditable = "true";
+          listNameElement.focus();
+          var s = window.getSelection(),
+            r = document.createRange();
+          r.selectNode(listNameElement);
+          s.removeAllRanges();
+          s.addRange(r);
+        };
+
+        listNewElement.onclick = e => createList();
+
+        listDeleteElement.onclick = e => deleteList();
+
+        selectElement.onchange = e => {
+          listIndex = e.target.selectedIndex;
+          loadList(e.target.value);
+        };
+        updateToolbar();
+      }
+      function createSelector() {
+        while (selectElement.firstChild) {
+          selectElement.removeChild(selectElement.firstChild);
         }
-        createSelector()
-      })
-    }
-
-    function createList() {
-      listName = defaultName
-      listId = UUID.generate()
-      lists.push({ id: listId, name: listName, count: 0 })
-      selectElement.add(createOption(listName + " (0 items)", listId))
-      listIndex = lists.length - 1
-      selectElement.selectedIndex = listIndex
-      saveList()
-    }
-
-    function addCell(id) {
-      if (selectedHash[id]) return;
-      selectedHash[id] = id;
-      lists[listIndex].count++
-      saveList()
-    }
-
-    function removeCell(cell) {
-      var id = selectedHash[cell]
-      delete selectedHash[cell];
-      if (id) clearCell(id)
-      saveList()
-    }
-
-    function clearCell(id) {
-      var item = document.getElementById("checkbox-" + id)
-      if (item) item.checked = false
-      if (lists[listIndex]) lists[listIndex].count--
-    }
-
-    function saveList() {
-      var savedList = { listName: listName, selectedHash: selectedHash }
-      localforage.setItem(listId, savedList)
-      updateName()
-      updateToolbar()
-      updateSelector()
-    }
-
-    function updateName() {
-      var newName = listName
-      if (newName === "") newName = defaultName
-      listNameElement.innerText = newName
-      document.title = newName
-    }
-
-    function initToolbar() {
-      listNameElement.onfocus = listNameElement.onclick = (e) => {
-        listNameElement.contentEditable = "true"
-        listEditElement.classList.add("hidden")
+        lists.forEach(l =>
+          selectElement.add(
+            createOption(
+              l.name +
+                " (" +
+                l.count +
+                (l.count === 1 ? " item" : " items") +
+                ")",
+              l.id
+            )
+          )
+        );
+        selectElement.selectedIndex = listIndex;
       }
-      listNameElement.onchange = listNameElement.onblur = (e) => {
-        listNameElement.contentEditable = "false"
-        listEditElement.classList.remove("hidden")
-        listName = listNameElement.innerText.trim()
-        lists[listIndex].name = listName
-        saveList()
+      function updateSelector() {
+        var count = Object.keys(selectedHash).length;
+        selectElement.item(selectElement.selectedIndex).innerText =
+          listName + " (" + count + (count === 1 ? " item" : " items") + ")";
       }
-      listEditElement.onclick = (e) => {
-        listNameElement.contentEditable = "true"
-        listNameElement.focus()
-        var s = window.getSelection(),
-          r = document.createRange();
-        r.selectNode(listNameElement);
-        s.removeAllRanges();
-        s.addRange(r);
+      function createOption(name, value) {
+        var opt = document.createElement("option");
+        opt.setAttribute("value", value);
+        opt.innerText = name;
+        return opt;
       }
-
-      listNewElement.onclick = (e) => createList()
-
-      listDeleteElement.onclick = (e) => deleteList()
-
-      selectElement.onchange = (e) => {
-        listIndex = e.target.selectedIndex
-        loadList(e.target.value)
-      }
-      updateToolbar()
-    }
-    function createSelector() {
-      while (selectElement.firstChild) {
-        selectElement.removeChild(selectElement.firstChild)
-      }
-      lists.forEach(l => selectElement.add(createOption(l.name + " (" + l.count + (l.count === 1 ? " item" : " items") + ")", l.id)))
-      selectElement.selectedIndex = listIndex
-    }
-    function updateSelector() {
-      var count = Object.keys(selectedHash).length
-      selectElement.item(selectElement.selectedIndex).innerText = listName + " (" + count + (count === 1 ? " item" : " items") + ")"
-    }
-    function createOption(name, value) {
-      var opt = document.createElement("option")
-      opt.setAttribute("value", value)
-      opt.innerText = name
-      return opt
-    }
-    function updateToolbar() {
-      var countElement = document.getElementsByClassName("list-count").item(0)
-      var listElement = document.getElementsByClassName("list-items").item(0)
-      var count = Object.keys(selectedHash).length
-      listClearElement.classList.add("hidden")
-      if (count > 0) {
-        listClearElement.classList.remove("hidden")
-      }
-      countElement.innerText = count !== 1 ? count + " items" : count + " item";
-      while (listElement.firstChild) {
-        listElement.removeChild(listElement.firstChild)
-      }
-      Object.keys(selectedHash).forEach(k => {
-        var id = selectedHash[k]
-        var thumb = document.createElement("li")
-        var img = new Image()
-        // img.src = "/images/scaled/" + id + ".jpg"
-        img.src = "https://dpla-cvtest.s3.amazonaws.com/" + id + ".jpg"
-        img.setAttribute("data-id", id)
-        thumb.classList.add("list-item")
-        thumb.appendChild(img)
-        listElement.appendChild(thumb)
-        thumb.onclick = (e) => {
-          var thumbId = e.target.getAttribute("data-id")
-          window.scrollTo(0, document.getElementById("item-" + thumbId).offsetTop)
+      function updateToolbar() {
+        var countElement = document
+          .getElementsByClassName("list-count")
+          .item(0);
+        var listElement = document.getElementsByClassName("list-items").item(0);
+        var count = Object.keys(selectedHash).length;
+        listClearElement.classList.add("hidden");
+        if (count > 0) {
+          listClearElement.classList.remove("hidden");
         }
-      })
-    }
-
-    function getItems() {
-      var xmlhttp = new XMLHttpRequest(),
-        method = "GET",
-        url = "./colors-v4-closefar.json";
-      xmlhttp.open(method, url, true);
-      xmlhttp.onload = function (data) {
-        parsed = JSON.parse(data.target.response);
-        parsed.forEach(p => {
-          var far = p.far;
-          var mid = p.mid;
-          var close = p.close;
-          var uuid = p.id.replace("../images/scaled/", "").replace(".jpg", "");
-          imageHash[p.id] = {
-            far: far,
-            mid: mid,
-            close: close,
-            url: p.id.replace("..", ""),
-            uuid: uuid
+        countElement.innerText =
+          count !== 1 ? count + " items" : count + " item";
+        while (listElement.firstChild) {
+          listElement.removeChild(listElement.firstChild);
+        }
+        Object.keys(selectedHash).forEach(k => {
+          var id = selectedHash[k];
+          var thumb = document.createElement("li");
+          var img = new Image();
+          // img.src = "/images/scaled/" + id + ".jpg"
+          img.src = "https://dpla-cvtest.s3.amazonaws.com/" + id + ".jpg";
+          img.setAttribute("data-id", id);
+          thumb.classList.add("list-item");
+          thumb.appendChild(img);
+          listElement.appendChild(thumb);
+          thumb.onclick = e => {
+            var thumbId = e.target.getAttribute("data-id");
+            window.scrollTo(
+              0,
+              document.getElementById("item-" + thumbId).offsetTop
+            );
           };
         });
-        init();
-      };
-      xmlhttp.send();
-    }
-
-    function init() {
-      var item;
-      var items = Object.values(selectedHash)
-      if (lists.length === 0 && items.length === 0) {
-        var keys = Object.keys(imageHash);
-        var len = keys.length;
-        var rnd = Math.floor(Math.random() * len);
-        item = imageHash[keys[rnd]];
-      } else {
-        // there's a list
-        // get first item if exists
-        item = imageHash["../images/scaled/" + items[0] + ".jpg"]
       }
-      // console.log(item);
-      displayItem(item);
-    }
 
-    function displayItem(item) {
-      console.log(item);
-      grid.innerHTML = "";
-      var main = document.createElement("div");
-      var img = new Image();
-      item.url = item.url.replace("/images/scaled/", "https://dpla-cvtest.s3.amazonaws.com/")
-      img.src = item.url;
-      main.appendChild(img);
-      main.classList.add("main");
-      grid.appendChild(main);
-
-      var id = item.uuid
-      var checkbox = document.createElement("input")
-      checkbox.setAttribute("type", "checkbox")
-      checkbox.setAttribute("data-id", id)
-      checkbox.setAttribute("id", "checkbox-" + id)
-      if (Object.values(selectedHash).indexOf(id) !== -1) {
-        checkbox.checked = true;
-      }
-      var label = document.createElement("label")
-      label.setAttribute("for", "checkbox-" + id)
-      label.classList.add("item-label")
-      var span = document.createElement("span")
-      span.innerText = "Add to list"
-      label.appendChild(checkbox)
-      label.appendChild(span)
-      main.appendChild(label)
-      checkbox.onclick = label.onclick = checkItem
-
-      palette = document.createElement("ul");
-      palette.classList.add("palette");
-      palette.appendChild(document.createElement("li"));
-      palette.appendChild(document.createElement("li"));
-      palette.appendChild(document.createElement("li"));
-      palette.appendChild(document.createElement("li"));
-      palette.appendChild(document.createElement("li"));
-      main.appendChild(palette);
-
-      metadata = document.createElement("div");
-      metadata.classList.add("metadata");
-      grid.appendChild(metadata);
-      var colorurl = "/output-colors/" + item.uuid + ".json";
-      loadColors(colorurl);
-      getMetadata(item.uuid);
-
-      item.close.forEach(i => {
-        createChild(i, "close");
-      });
-
-      item.mid.forEach(i => {
-        createChild(i, "mid");
-      });
-
-      item.far.forEach(i => {
-        createChild(i, "far");
-      });
-
-      window.scrollTo(0, 0);
-    }
-
-    function checkItem(e) {
-      e.stopPropagation() // prevents from opening/closing expansion
-      var id = this.getAttribute("data-id");
-      var selected = this.checked;
-      // console.log(this, point, id, selected)
-      if (selected) {
-        addCell(id)
-      } else {
-        removeCell(id)
-      }
-    }
-
-    function createChild(item, type) {
-      var child = document.createElement("div");
-      child.setAttribute("data-item", item);
-      child.classList.add(type);
-      var img = new Image();
-      img.src = item.replace("..", "").replace("/images/scaled/", "https://dpla-cvtest.s3.amazonaws.com/");
-      child.appendChild(img);
-      grid.appendChild(child);
-      child.onclick = closeFarClick;
-    }
-
-    function closeFarClick(e) {
-      var key = e.target.getAttribute("data-item");
-      var item = imageHash[key];
-      displayItem(item);
-    }
-
-    function getMetadata(id) {
-      var xmlhttp = new XMLHttpRequest(),
-        method = "GET",
-        url =
-          "https://dp.la/api/dpla/items?fields=sourceResource.description,sourceResource.date,sourceResource.title,sourceResource.subject.name,provider.name&id=" +
-          id;
-
-      xmlhttp.open(method, url, true);
-      xmlhttp.onload = function (data) {
-        var item = JSON.parse(data.target.response).docs[0];
-        metadata.innerHTML = "";
-        if (!item) return
-        var title = document.createElement("h1");
-        title.classList.add("title");
-        title.innerHTML = item["sourceResource.title"];
-        metadata.appendChild(title);
-        // if (item["sourceResource.description"]) {
-        //   var description = document.createElement("p")
-        //   description.innerHTML = item["sourceResource.description"];
-        //   metadata.appendChild(description)
-        // }
-        var provider = document.createElement("p");
-        provider.innerHTML = item["provider.name"];
-        metadata.appendChild(provider);
-        if (item["sourceResource.subject.name"]) {
-          var subjects = document.createElement("ul");
-          subjects.classList.add("subjects");
-          item["sourceResource.subject.name"].forEach(s => {
-            var subject = document.createElement("li");
-            subject.innerHTML = s;
-            subjects.appendChild(subject);
+      function getItems() {
+        var xmlhttp = new XMLHttpRequest(),
+          method = "GET",
+          url = "./colors-v4-closefar.json";
+        xmlhttp.open(method, url, true);
+        xmlhttp.onload = function(data) {
+          parsed = JSON.parse(data.target.response);
+          parsed.forEach(p => {
+            var far = p.far;
+            var mid = p.mid;
+            var close = p.close;
+            var uuid = p.id
+              .replace("../images/scaled/", "")
+              .replace(".jpg", "");
+            imageHash[p.id] = {
+              far: far,
+              mid: mid,
+              close: close,
+              url: p.id.replace("..", ""),
+              uuid: uuid
+            };
           });
-          metadata.appendChild(subjects);
+          init();
+        };
+        xmlhttp.send();
+      }
+
+      function init() {
+        var item;
+        var items = Object.values(selectedHash);
+        if (lists.length === 0 && items.length === 0) {
+          var keys = Object.keys(imageHash);
+          var len = keys.length;
+          var rnd = Math.floor(Math.random() * len);
+          item = imageHash[keys[rnd]];
+        } else {
+          // there's a list
+          // get first item if exists
+          item = imageHash["../images/scaled/" + items[0] + ".jpg"];
         }
-        // console.log(item)
-      };
-      xmlhttp.send();
-    }
-    function loadColors(file) {
-      var xmlhttp = new XMLHttpRequest(),
-        method = "GET",
-        url = file;
+        // console.log(item);
+        displayItem(item);
+      }
 
-      xmlhttp.open(method, url, true);
-      xmlhttp.onload = function (data) {
-        if (data.target.response) JSON.parse(data.target.response).imgdata[1].clusters.cluster.forEach(
-          (c, index) => {
-            palette
-              .getElementsByTagName("li")
-            [index].setAttribute(
-              "style",
-              "width: " +
-              c[0].f * 100 +
-              "%; background-color: " +
-              c[2].hex[0].hex +
-              ";"
-            );
-          }
+      function displayItem(item) {
+        console.log(item);
+        grid.innerHTML = "";
+        var main = document.createElement("div");
+        var img = new Image();
+        item.url = item.url.replace(
+          "/images/scaled/",
+          "https://dpla-cvtest.s3.amazonaws.com/"
         );
-      };
-      xmlhttp.send();
-    }
+        img.src = item.url;
+        main.appendChild(img);
+        main.classList.add("main");
+        grid.appendChild(main);
 
-  </script>
+        var id = item.uuid;
+        var checkbox = document.createElement("input");
+        checkbox.setAttribute("type", "checkbox");
+        checkbox.setAttribute("data-id", id);
+        checkbox.setAttribute("id", "checkbox-" + id);
+        if (Object.values(selectedHash).indexOf(id) !== -1) {
+          checkbox.checked = true;
+        }
+        var label = document.createElement("label");
+        label.setAttribute("for", "checkbox-" + id);
+        label.classList.add("item-label");
+        var span = document.createElement("span");
+        span.innerText = "Add to list";
+        label.appendChild(checkbox);
+        label.appendChild(span);
+        main.appendChild(label);
+        checkbox.onclick = label.onclick = checkItem;
 
-</body>
+        palette = document.createElement("ul");
+        palette.classList.add("palette");
+        palette.appendChild(document.createElement("li"));
+        palette.appendChild(document.createElement("li"));
+        palette.appendChild(document.createElement("li"));
+        palette.appendChild(document.createElement("li"));
+        palette.appendChild(document.createElement("li"));
+        main.appendChild(palette);
 
+        metadata = document.createElement("div");
+        metadata.classList.add("metadata");
+        grid.appendChild(metadata);
+        var colorurl =
+          (window.location.href.indexOf("https://mgiraldo.github.io") !== -1
+            ? "/cv-tests"
+            : "") +
+          "/output-colors/" +
+          item.uuid +
+          ".json";
+        loadColors(colorurl);
+        getMetadata(item.uuid);
+
+        item.close.forEach(i => {
+          createChild(i, "close");
+        });
+
+        item.mid.forEach(i => {
+          createChild(i, "mid");
+        });
+
+        item.far.forEach(i => {
+          createChild(i, "far");
+        });
+
+        window.scrollTo(0, 0);
+      }
+
+      function checkItem(e) {
+        e.stopPropagation(); // prevents from opening/closing expansion
+        var id = this.getAttribute("data-id");
+        var selected = this.checked;
+        // console.log(this, point, id, selected)
+        if (selected) {
+          addCell(id);
+        } else {
+          removeCell(id);
+        }
+      }
+
+      function createChild(item, type) {
+        var child = document.createElement("div");
+        child.setAttribute("data-item", item);
+        child.classList.add(type);
+        var img = new Image();
+        img.src = item
+          .replace("..", "")
+          .replace("/images/scaled/", "https://dpla-cvtest.s3.amazonaws.com/");
+        child.appendChild(img);
+        grid.appendChild(child);
+        child.onclick = closeFarClick;
+      }
+
+      function closeFarClick(e) {
+        var key = e.target.getAttribute("data-item");
+        var item = imageHash[key];
+        displayItem(item);
+      }
+
+      function getMetadata(id) {
+        var xmlhttp = new XMLHttpRequest(),
+          method = "GET",
+          url =
+            "https://dp.la/api/dpla/items?fields=sourceResource.description,sourceResource.date,sourceResource.title,sourceResource.subject.name,provider.name&id=" +
+            id;
+
+        xmlhttp.open(method, url, true);
+        xmlhttp.onload = function(data) {
+          var item = JSON.parse(data.target.response).docs[0];
+          metadata.innerHTML = "";
+          if (!item) return;
+          var title = document.createElement("h1");
+          title.classList.add("title");
+          title.innerHTML = item["sourceResource.title"];
+          metadata.appendChild(title);
+          // if (item["sourceResource.description"]) {
+          //   var description = document.createElement("p")
+          //   description.innerHTML = item["sourceResource.description"];
+          //   metadata.appendChild(description)
+          // }
+          var provider = document.createElement("p");
+          provider.innerHTML = item["provider.name"];
+          metadata.appendChild(provider);
+          if (item["sourceResource.subject.name"]) {
+            var subjects = document.createElement("ul");
+            subjects.classList.add("subjects");
+            item["sourceResource.subject.name"].forEach(s => {
+              var subject = document.createElement("li");
+              subject.innerHTML = s;
+              subjects.appendChild(subject);
+            });
+            metadata.appendChild(subjects);
+          }
+          // console.log(item)
+        };
+        xmlhttp.send();
+      }
+      function loadColors(file) {
+        var xmlhttp = new XMLHttpRequest(),
+          method = "GET",
+          url = file;
+
+        xmlhttp.open(method, url, true);
+        xmlhttp.onload = function(data) {
+          if (data.target.response)
+            JSON.parse(
+              data.target.response
+            ).imgdata[1].clusters.cluster.forEach((c, index) => {
+              palette
+                .getElementsByTagName("li")
+                [index].setAttribute(
+                  "style",
+                  "width: " +
+                    c[0].f * 100 +
+                    "%; background-color: " +
+                    c[2].hex[0].hex +
+                    ";"
+                );
+            });
+        };
+        xmlhttp.send();
+      }
+    </script>
+  </body>
 </html>
