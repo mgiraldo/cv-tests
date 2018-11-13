@@ -1,523 +1,623 @@
 <!DOCTYPE html>
 <html>
+  <head>
+    <title>Untitled list</title>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
+    <meta content="utf-8" http-equiv="encoding" />
+    <link rel="stylesheet" href="viewer-grid.css" />
+  </head>
 
-<head>
-  <title>Untitled list</title>
-  <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
-  <meta content="utf-8" http-equiv="encoding">
-  <link rel="stylesheet" href="viewer-grid.css" />
-
-</head>
-
-<body>
-
-  <div class="toolbar">
-    <button class="list-new">New List</button>
-    <div class="list-name-tools">
-      <h1 class="list-name" contenteditable="false">Untitled list</h1>
-      <button class="list-edit">Edit</button>
-      <button class="list-delete">Delete</button>
+  <body>
+    <div class="toolbar">
+      <button class="list-new">New List</button>
+      <div class="list-name-tools">
+        <h1 class="list-name" contenteditable="false">Untitled list</h1>
+        <button class="list-edit">Edit</button>
+        <button class="list-delete">Delete</button>
+      </div>
+      <div class="list-details">
+        <span class="list-count">0 items</span>
+        <ul class="list-items"></ul>
+        <button class="list-clear hidden">Clear</button>
+      </div>
+      <select name="" class="list-selector"> </select>
     </div>
-    <div class="list-details">
-      <span class="list-count">0 items</span>
-      <ul class="list-items">
-      </ul>
-      <button class="list-clear hidden">Clear</button>
-    </div>
-    <select name="" class="list-selector">
-    </select>
-  </div>
 
-  <div id="grid" class="grid">
-  </div>
+    <div id="grid" class="grid"></div>
 
-  <script src="https://polyfill.io/v2/polyfill.min.js?features=IntersectionObserver" type="text/javascript"></script>
-  <script src="localforage.min.js" type="text/javascript"></script>
+    <script
+      src="https://polyfill.io/v2/polyfill.min.js?features=IntersectionObserver"
+      type="text/javascript"
+    ></script>
+    <script src="localforage.min.js" type="text/javascript"></script>
 
-  <script type="text/javascript">
-    var grid = document.getElementById("grid")
-    var listNameElement = document.getElementsByClassName("list-name").item(0)
-    var listEditElement = document.getElementsByClassName("list-edit").item(0)
-    var listClearElement = document.getElementsByClassName("list-clear").item(0)
-    var listNewElement = document.getElementsByClassName("list-new").item(0)
-    var listDeleteElement = document.getElementsByClassName("list-delete").item(0)
-    var selectElement = document.getElementsByClassName("list-selector").item(0)
-    var metadata, metadataIds
-    var expansionElement, metadataElement
-    var last_row = -1;
-    var last_col = -1;
-    var points, imagexy = {};
-    var defaultName = "Untitled list", listIndex = -1, listId = "", listName = "", selectedHash = {}, lists = [];
-    var expanded
-    var intersectionObserver
+    <script type="text/javascript">
+      var grid = document.getElementById("grid");
+      var listNameElement = document
+        .getElementsByClassName("list-name")
+        .item(0);
+      var listEditElement = document
+        .getElementsByClassName("list-edit")
+        .item(0);
+      var listClearElement = document
+        .getElementsByClassName("list-clear")
+        .item(0);
+      var listNewElement = document.getElementsByClassName("list-new").item(0);
+      var listDeleteElement = document
+        .getElementsByClassName("list-delete")
+        .item(0);
+      var selectElement = document
+        .getElementsByClassName("list-selector")
+        .item(0);
+      var metadata, metadataIds;
+      var expansionElement, metadataElement;
+      var last_row = -1;
+      var last_col = -1;
+      var points,
+        imagexy = {};
+      var defaultName = "Untitled list",
+        listIndex = -1,
+        listId = "",
+        listName = "",
+        selectedHash = {},
+        lists = [];
+      var expanded;
+      var intersectionObserver;
 
-    localforage.iterate((value, key, index) => {
-      if (!value.listName) return;
-      lists.push({ id: key, name: value.listName, count: Object.keys(value.selectedHash).length });
-    }).then((value) => {
-      if (lists.length === 0) {
-        createList()
-      } else {
-        listIndex = 0
-        createSelector()
-        // get the first list
-        loadList(lists[0].id)
-      }
-      getItems()
-    }).catch((err) => {
-      console.error(err)
-    })
-
-    window.onresize = function (e) {
-      setRow()
-    }
-
-    function loadList(id) {
-      clearSelection(false)
-      localforage.getItem(id).then(value => {
-        listName = value.listName
-        listId = id
-        selectedHash = value.selectedHash
-        lists[listIndex].count = Object.keys(selectedHash).length
-        saveList()
-      })
-    }
-
-    function deleteList() {
-      // get a new list
-      var tempList = lists.filter(l => l.id !== listId)[0]
-      // delete the current list
-      lists.splice(listIndex, 1)
-      listIndex = 0
-      localforage.removeItem(listId).then(() => {
-        clearSelection(false)
-        if (lists.length > 0) {
-          loadList(tempList.id)
-        } else {
-          createList()
-        }
-        createSelector()
-      })
-    }
-
-    function createList() {
-      clearSelection(false)
-      listName = defaultName
-      listId = UUID.generate()
-      lists.push({ id: listId, name: listName, count: 0 })
-      selectElement.add(createOption(listName + " (0 items)", listId))
-      listIndex = lists.length - 1
-      selectElement.selectedIndex = listIndex
-      saveList()
-    }
-
-    function updateName() {
-      var newName = listName
-      if (newName === "") newName = defaultName
-      listNameElement.innerText = newName
-      document.title = newName
-    }
-
-    function getItems() {
-      var xmlhttp = new XMLHttpRequest(),
-        method = 'GET',
-        url = './metadata.min.json';
-      xmlhttp.open(method, url, true);
-      xmlhttp.onload = function (data) {
-        metadata = {}
-        var temp = JSON.parse(data.target.response)
-        temp.forEach(t => metadata = Object.assign(metadata, t))
-        init();
-      };
-      xmlhttp.send()
-    }
-
-    function setRow() {
-      if (!expanded) return;
-      var topExpanded = expanded.offsetTop;
-      if (topExpanded === 0) {
-        // first row
-        expansionElement.style = "grid-row-start: 2;"
-        return;
-      }
-      // not in top so we need to find what row
-      var tops = [topExpanded]
-      var el = expanded.previousElementSibling
-      while (el) {
-        tops.push(el.offsetTop)
-        el = el.previousElementSibling
-      }
-      var unique = tops.filter((val, idx, array) => array.indexOf(val) === idx);
-      expansionElement.style = "grid-row-start: " + (unique.length + 1) + ";"
-    }
-
-    function createExpansion(sibling, url, colorurl, id, point) {
-      var currentExpansion = document.getElementById("expansion")
-      if (currentExpansion) {
-        // there's already an expanded element
-        currentExpansion.classList.add("collapsed")
-        setTimeout(() => {
-          currentExpansion.remove()
-          showExpansion(sibling, url, colorurl, id, point)
-        }, 200)
-      } else {
-        showExpansion(sibling, url, colorurl, id, point)
-      }
-    }
-    function showExpansion(sibling, url, colorurl, id, point) {
-      var currentExpanded = expanded
-      if (currentExpanded) {
-        currentExpanded.classList.remove("expanded")
-      }
-      if (sibling === currentExpanded) {
-        expanded = undefined;
-        return
-      }
-      sibling.classList.add("expanded")
-      expansionElement = document.createElement("div");
-      expansionElement.setAttribute("id", "expansion")
-      expansionElement.classList.add("expansion", "collapsed")
-      if (sibling.classList.contains("selected")) expansionElement.classList.add("selected")
-      var main = document.createElement("div");
-      main.classList.add("main")
-      var img = new Image();
-      img.src = url;
-      var imgDiv = document.createElement("div")
-      imgDiv.classList.add("image-palette")
-      var palette = document.createElement("ul");
-      palette.classList.add("palette")
-      palette.appendChild(document.createElement("li"))
-      palette.appendChild(document.createElement("li"))
-      palette.appendChild(document.createElement("li"))
-      palette.appendChild(document.createElement("li"))
-      palette.appendChild(document.createElement("li"))
-      imgDiv.appendChild(palette);
-      imgDiv.appendChild(img);
-      main.appendChild(imgDiv);
-      metadataElement = document.createElement("div");
-      metadataElement.classList.add("metadata")
-      main.appendChild(metadataElement)
-      expansionElement.appendChild(main)
-      sibling.insertAdjacentElement("afterend", expansionElement);
-      loadColors(colorurl)
-      getMetadata(id)
-      expanded = sibling
-      setTimeout(() => expansionElement.classList.remove("collapsed"), 10)
-      setRow()
-    }
-    function gridItemClick(e) {
-      var point = this.getAttribute("data-point")
-      var id = this.getAttribute("data-id");
-      // console.log(point)
-      var url = this.getAttribute("data-url");
-      // var colorurl = "/output-colors" + url.replace("/images/scaled", "").replace(".jpg", ".json")
-      var colorurl = "/output-colors" + url.replace("https://dpla-cvtest.s3.amazonaws.com", "").replace(".jpg", ".json")
-      createExpansion(this, url, colorurl, id, point)
-    }
-    function initToolbar() {
-      listNameElement.onfocus = listNameElement.onclick = (e) => {
-        listNameElement.contentEditable = "true"
-        listEditElement.classList.add("hidden")
-      }
-      listNameElement.onchange = listNameElement.onblur = (e) => {
-        listNameElement.contentEditable = "false"
-        listEditElement.classList.remove("hidden")
-        listName = listNameElement.innerText.trim()
-        lists[listIndex].name = listName
-        saveList()
-      }
-      listEditElement.onclick = (e) => {
-        listNameElement.contentEditable = "true"
-        listNameElement.focus()
-        var s = window.getSelection(),
-          r = document.createRange();
-        r.selectNode(listNameElement);
-        s.removeAllRanges();
-        s.addRange(r);
-      }
-      listClearElement.onclick = (e) => clearSelection()
-
-      listNewElement.onclick = (e) => createList()
-
-      listDeleteElement.onclick = (e) => deleteList()
-
-      selectElement.onchange = (e) => {
-        listIndex = e.target.selectedIndex
-        loadList(e.target.value)
-      }
-      updateToolbar()
-    }
-    function createSelector() {
-      while (selectElement.firstChild) {
-        selectElement.removeChild(selectElement.firstChild)
-      }
-      lists.forEach(l => selectElement.add(createOption(l.name + " (" + l.count + (l.count === 1 ? " item" : " items") + ")", l.id)))
-      selectElement.selectedIndex = listIndex
-    }
-    function updateSelector() {
-      var count = Object.keys(selectedHash).length
-      selectElement.item(selectElement.selectedIndex).innerText = listName + " (" + count + (count === 1 ? " item" : " items") + ")"
-    }
-    function createOption(name, value) {
-      var opt = document.createElement("option")
-      opt.setAttribute("value", value)
-      opt.innerText = name
-      return opt
-    }
-    function updateToolbar() {
-      var countElement = document.getElementsByClassName("list-count").item(0)
-      var listElement = document.getElementsByClassName("list-items").item(0)
-      var count = Object.keys(selectedHash).length
-      listClearElement.classList.add("hidden")
-      if (count > 0) {
-        listClearElement.classList.remove("hidden")
-      }
-      countElement.innerText = count !== 1 ? count + " items" : count + " item";
-      while (listElement.firstChild) {
-        listElement.removeChild(listElement.firstChild)
-      }
-      Object.keys(selectedHash).forEach(k => {
-        var id = selectedHash[k]
-        var thumb = document.createElement("li")
-        var img = new Image()
-        // img.src = "/images/scaled/" + id + ".jpg"
-        img.src = "https://dpla-cvtest.s3.amazonaws.com/" + id + ".jpg"
-        img.setAttribute("data-id", id)
-        thumb.classList.add("list-item")
-        thumb.appendChild(img)
-        listElement.appendChild(thumb)
-        thumb.onclick = (e) => {
-          var thumbId = e.target.getAttribute("data-id")
-          window.scrollTo(0, document.getElementById("item-" + thumbId).offsetTop)
-        }
-      })
-    }
-    function init() {
-      initToolbar()
-      var xmlhttp = new XMLHttpRequest(),
-        method = 'GET',
-        url = './colors-v4-tSNE-gridwide-points.json';
-      xmlhttp.open(method, url, true);
-      xmlhttp.onload = function (data) {
-        createObserver()
-        points = JSON.parse(data.target.response)
-        points.sort((a, b) => a.point[1] < b.point[1] ? -1 : (a.point[1] > b.point[1] ? 1 : (a.point[0] < b.point[0] ? -1 : (a.point[0] > b.point[0] ? 1 : 0))))
-        points.forEach(p => createThumbnail(p))
-      };
-      xmlhttp.send()
-    }
-    function createObserver() {
-      intersectionObserver = new IntersectionObserver((entries, self) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) {
-            showImage(e.target)
+      localforage
+        .iterate((value, key, index) => {
+          if (!value.listName) return;
+          lists.push({
+            id: key,
+            name: value.listName,
+            count: Object.keys(value.selectedHash).length
+          });
+        })
+        .then(value => {
+          if (lists.length === 0) {
+            createList();
           } else {
-            hideImage(e.target)
+            listIndex = 0;
+            createSelector();
+            // get the first list
+            loadList(lists[0].id);
           }
+          getItems();
         })
-      }, { root: null, threshold: 0.1, rootMargin: '20px' })
-    }
-    function createThumbnail(p) {
-      var item = document.createElement("div")
-      // var url = p.path.replace("/Users/mga/Documents/website/cv", "");
-      var url = p.path.replace("/Users/mga/Documents/website/cv/images/scaled", "https://dpla-cvtest.s3.amazonaws.com");
-      // var id = url.replace("/images/scaled/", "").replace(".jpg", "")
-      var id = url.replace("https://dpla-cvtest.s3.amazonaws.com/", "").replace(".jpg", "")
-      var meta = metadata[id]
-      item.classList.add("item")
-      item.setAttribute("data-url", url)
-      item.setAttribute("data-id", id)
-      item.setAttribute("id", "item-" + id)
-      item.setAttribute("data-point", p.point.toString())
-      var itemImg = new Image();
-      itemImg.setAttribute("data-src", url)
-      var imgLink = document.createElement("a")
-      imgLink.setAttribute("href", "#item-" + id)
-      imgLink.classList.add("item-link")
-      imgLink.onclick = imageLinkClick
-      imgLink.appendChild(itemImg)
-      item.appendChild(imgLink)
-      var itemMeta = document.createElement("div")
-      itemMeta.classList.add("item-metadata")
-      var checkbox = document.createElement("input")
-      checkbox.setAttribute("type", "checkbox")
-      checkbox.setAttribute("data-id", id)
-      checkbox.setAttribute("id", "checkbox-" + id)
-      checkbox.setAttribute("data-point", p.point.toString())
-      if (Object.values(selectedHash).indexOf(id) !== -1) {
-        checkbox.checked = true;
-      }
-      var label = document.createElement("label")
-      label.setAttribute("for", "checkbox-" + id)
-      label.classList.add("item-label")
-      var span = document.createElement("span")
-      span.innerText = "Add to list"
-      label.appendChild(checkbox)
-      label.appendChild(span)
-      itemMeta.appendChild(label)
-      checkbox.onclick = label.onclick = checkItem
-      var title = document.createElement("h2")
-      title.innerText = meta["sourceResource.title"]
-      itemMeta.appendChild(title)
-      var provider = document.createElement("p")
-      provider.innerText = meta["provider.name"]
-      itemMeta.appendChild(provider)
-      if (meta["sourceResource.date"]) {
-        var date = document.createElement("p")
-        date.classList.add("date")
-        date.innerText = (Array.isArray(meta["sourceResource.date"])) ? meta["sourceResource.date"][0].displayDate : meta["sourceResource.date"].displayDate
-        itemMeta.appendChild(date)
-      }
-      item.appendChild(itemMeta)
-      grid.appendChild(item)
-      item.onclick = gridItemClick;
-      intersectionObserver.observe(item)
-      // imagexy[p.point[0] + "," + p.point[1]] = p.path
-    }
-    function imageLinkClick(e) {
-      e.preventDefault()
-    }
-    function showImage(target) {
-      var img = target.childNodes.item(0).childNodes.item(0)
-      img.setAttribute("src", img.getAttribute("data-src"))
-    }
-    function hideImage(target) {
-      var img = target.childNodes.item(0)
-      img.setAttribute("src", "")
-    }
-    function addCell(id) {
-      if (selectedHash[id]) return;
-      selectedHash[id] = id;
-      lists[listIndex].count++
-      saveList()
-    }
-    function saveList() {
-      var savedList = { listName: listName, selectedHash: selectedHash }
-      localforage.setItem(listId, savedList)
-      updateName()
-      updateToolbar()
-      updateSelector()
-      drawSelection()
-    }
-    function removeCell(cell) {
-      var id = selectedHash[cell]
-      delete selectedHash[cell];
-      if (id) clearCell(id)
-      saveList()
-    }
-    function checkItem(e) {
-      e.stopPropagation() // prevents from opening/closing expansion
-      var point = this.getAttribute("data-point")
-      var id = this.getAttribute("data-id");
-      var selected = this.checked;
-      // console.log(this, point, id, selected)
-      if (selected) {
-        addCell(id)
-      } else {
-        removeCell(id)
-      }
-    }
-    function clearSelection(save = true) {
-      Object.values(selectedHash).forEach(id => {
-        clearCell(id)
-      })
-      selectedHash = {}
-      if (lists[listIndex]) lists[listIndex].count = 0
-      if (save) saveList()
-    }
-    function clearCell(id) {
-      var item = document.getElementById("checkbox-" + id)
-      if (item) item.checked = false
-      if (lists[listIndex]) lists[listIndex].count--
-    }
-    function drawSelection() {
-      Object.values(selectedHash).forEach(id => {
-        var item = document.getElementById("checkbox-" + id)
-        if (item) item.checked = true
-      })
-    }
-    function getMetadata(id) {
-      var item = metadata[id]
-      metadataElement.innerHTML = "";
-      var title = document.createElement("h3")
-      title.classList.add("title")
-      title.innerHTML = item["sourceResource.title"];
-      metadataElement.appendChild(title)
-      // if (item["sourceResource.description"]) {
-      //   var description = document.createElement("p")
-      //   description.innerHTML = item["sourceResource.description"];
-      //   metadataElement.appendChild(description)
-      // }
-      if (item["sourceResource.date"]) {
-        var date = document.createElement("p")
-        date.classList.add("date")
-        date.innerText = (Array.isArray(item["sourceResource.date"])) ? item["sourceResource.date"][0].displayDate : item["sourceResource.date"].displayDate
-        metadataElement.appendChild(date)
-      }
-      var provider = document.createElement("a")
-      provider.classList.add("provider")
-      provider.innerHTML = item["provider.name"]
-      provider.setAttribute("href", item.isShownAt)
-      provider.setAttribute("target", "_blank")
-      metadataElement.appendChild(provider)
-      if (item["sourceResource.subject.name"]) {
-        var subjects = document.createElement("ul")
-        subjects.classList.add("subjects")
-        item["sourceResource.subject.name"].forEach(s => {
-          var subject = document.createElement("li")
-          subject.innerHTML = s
-          subjects.appendChild(subject)
-        })
-        metadataElement.appendChild(subjects)
-      }
-      // var meta = metadata[id]
-      // var xmlhttp = new XMLHttpRequest(),
-      //   method = 'GET',
-      //   url = "https://dp.la/api/dpla/items?fields=sourceResource.description,sourceResource.date,sourceResource.title,sourceResource.subject.name,provider.name&id=" + id;
+        .catch(err => {
+          console.error(err);
+        });
 
-      // xmlhttp.open(method, url, true);
-      // xmlhttp.onload = function (data) {
-      //   var item = JSON.parse(data.target.response).docs[0]
-      //   // console.log(item)
-      // };
-      // xmlhttp.send()
-    }
-    function loadColors(file) {
-      var xmlhttp = new XMLHttpRequest(),
-        method = 'GET',
-        url = file;
-
-      xmlhttp.open(method, url, true);
-      xmlhttp.onload = function (data) {
-        JSON.parse(data.target.response).imgdata[1].clusters.cluster.forEach((c, index) => {
-          expansionElement.getElementsByTagName("li")[index].setAttribute("style", "width: " + (c[0].f * 100) + "%; background-color: " + c[2].hex[0].hex + ";")
-        })
+      window.onresize = function(e) {
+        setRow();
       };
-      xmlhttp.send()
-    }
-    /**
-   * Fast UUID generator, RFC4122 version 4 compliant.
-   * @author Jeff Ward (jcward.com).
-   * @license MIT license
-   * @link http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript/21963136#21963136
-   **/
-    var UUID = (function () {
-      var self = {};
-      var lut = []; for (var i = 0; i < 256; i++) { lut[i] = (i < 16 ? '0' : '') + (i).toString(16); }
-      self.generate = function () {
-        var d0 = Math.random() * 0xffffffff | 0;
-        var d1 = Math.random() * 0xffffffff | 0;
-        var d2 = Math.random() * 0xffffffff | 0;
-        var d3 = Math.random() * 0xffffffff | 0;
-        return lut[d0 & 0xff] + lut[d0 >> 8 & 0xff] + lut[d0 >> 16 & 0xff] + lut[d0 >> 24 & 0xff] + '-' +
-          lut[d1 & 0xff] + lut[d1 >> 8 & 0xff] + '-' + lut[d1 >> 16 & 0x0f | 0x40] + lut[d1 >> 24 & 0xff] + '-' +
-          lut[d2 & 0x3f | 0x80] + lut[d2 >> 8 & 0xff] + '-' + lut[d2 >> 16 & 0xff] + lut[d2 >> 24 & 0xff] +
-          lut[d3 & 0xff] + lut[d3 >> 8 & 0xff] + lut[d3 >> 16 & 0xff] + lut[d3 >> 24 & 0xff];
+
+      function loadList(id) {
+        clearSelection(false);
+        localforage.getItem(id).then(value => {
+          listName = value.listName;
+          listId = id;
+          selectedHash = value.selectedHash;
+          lists[listIndex].count = Object.keys(selectedHash).length;
+          saveList();
+        });
       }
-      return self;
-    })();
-  </script>
 
-</body>
+      function deleteList() {
+        // get a new list
+        var tempList = lists.filter(l => l.id !== listId)[0];
+        // delete the current list
+        lists.splice(listIndex, 1);
+        listIndex = 0;
+        localforage.removeItem(listId).then(() => {
+          clearSelection(false);
+          if (lists.length > 0) {
+            loadList(tempList.id);
+          } else {
+            createList();
+          }
+          createSelector();
+        });
+      }
 
+      function createList() {
+        clearSelection(false);
+        listName = defaultName;
+        listId = UUID.generate();
+        lists.push({ id: listId, name: listName, count: 0 });
+        selectElement.add(createOption(listName + " (0 items)", listId));
+        listIndex = lists.length - 1;
+        selectElement.selectedIndex = listIndex;
+        saveList();
+      }
+
+      function updateName() {
+        var newName = listName;
+        if (newName === "") newName = defaultName;
+        listNameElement.innerText = newName;
+        document.title = newName;
+      }
+
+      function getItems() {
+        var xmlhttp = new XMLHttpRequest(),
+          method = "GET",
+          url = "./metadata.min.json";
+        xmlhttp.open(method, url, true);
+        xmlhttp.onload = function(data) {
+          metadata = {};
+          var temp = JSON.parse(data.target.response);
+          temp.forEach(t => (metadata = Object.assign(metadata, t)));
+          init();
+        };
+        xmlhttp.send();
+      }
+
+      function setRow() {
+        if (!expanded) return;
+        var topExpanded = expanded.offsetTop;
+        if (topExpanded === 0) {
+          // first row
+          expansionElement.style = "grid-row-start: 2;";
+          return;
+        }
+        // not in top so we need to find what row
+        var tops = [topExpanded];
+        var el = expanded.previousElementSibling;
+        while (el) {
+          tops.push(el.offsetTop);
+          el = el.previousElementSibling;
+        }
+        var unique = tops.filter(
+          (val, idx, array) => array.indexOf(val) === idx
+        );
+        expansionElement.style = "grid-row-start: " + (unique.length + 1) + ";";
+      }
+
+      function createExpansion(sibling, url, colorurl, id, point) {
+        var currentExpansion = document.getElementById("expansion");
+        if (currentExpansion) {
+          // there's already an expanded element
+          currentExpansion.classList.add("collapsed");
+          setTimeout(() => {
+            currentExpansion.remove();
+            showExpansion(sibling, url, colorurl, id, point);
+          }, 200);
+        } else {
+          showExpansion(sibling, url, colorurl, id, point);
+        }
+      }
+      function showExpansion(sibling, url, colorurl, id, point) {
+        var currentExpanded = expanded;
+        if (currentExpanded) {
+          currentExpanded.classList.remove("expanded");
+        }
+        if (sibling === currentExpanded) {
+          expanded = undefined;
+          return;
+        }
+        sibling.classList.add("expanded");
+        expansionElement = document.createElement("div");
+        expansionElement.setAttribute("id", "expansion");
+        expansionElement.classList.add("expansion", "collapsed");
+        if (sibling.classList.contains("selected"))
+          expansionElement.classList.add("selected");
+        var main = document.createElement("div");
+        main.classList.add("main");
+        var img = new Image();
+        img.src = url;
+        var imgDiv = document.createElement("div");
+        imgDiv.classList.add("image-palette");
+        var palette = document.createElement("ul");
+        palette.classList.add("palette");
+        palette.appendChild(document.createElement("li"));
+        palette.appendChild(document.createElement("li"));
+        palette.appendChild(document.createElement("li"));
+        palette.appendChild(document.createElement("li"));
+        palette.appendChild(document.createElement("li"));
+        imgDiv.appendChild(palette);
+        imgDiv.appendChild(img);
+        main.appendChild(imgDiv);
+        metadataElement = document.createElement("div");
+        metadataElement.classList.add("metadata");
+        main.appendChild(metadataElement);
+        expansionElement.appendChild(main);
+        sibling.insertAdjacentElement("afterend", expansionElement);
+        loadColors(colorurl);
+        getMetadata(id);
+        expanded = sibling;
+        setTimeout(() => expansionElement.classList.remove("collapsed"), 10);
+        setRow();
+      }
+      function gridItemClick(e) {
+        var point = this.getAttribute("data-point");
+        var id = this.getAttribute("data-id");
+        // console.log(point)
+        var url = this.getAttribute("data-url");
+        // var colorurl = "/output-colors" + url.replace("/images/scaled", "").replace(".jpg", ".json")
+        var colorurl =
+          (window.location.href.indexOf("https://mgiraldo.github.io") !== -1
+            ? "/cv-tests"
+            : "") +
+          "/output-colors" +
+          url
+            .replace("https://dpla-cvtest.s3.amazonaws.com", "")
+            .replace(".jpg", ".json");
+        createExpansion(this, url, colorurl, id, point);
+      }
+      function initToolbar() {
+        listNameElement.onfocus = listNameElement.onclick = e => {
+          listNameElement.contentEditable = "true";
+          listEditElement.classList.add("hidden");
+        };
+        listNameElement.onchange = listNameElement.onblur = e => {
+          listNameElement.contentEditable = "false";
+          listEditElement.classList.remove("hidden");
+          listName = listNameElement.innerText.trim();
+          lists[listIndex].name = listName;
+          saveList();
+        };
+        listEditElement.onclick = e => {
+          listNameElement.contentEditable = "true";
+          listNameElement.focus();
+          var s = window.getSelection(),
+            r = document.createRange();
+          r.selectNode(listNameElement);
+          s.removeAllRanges();
+          s.addRange(r);
+        };
+        listClearElement.onclick = e => clearSelection();
+
+        listNewElement.onclick = e => createList();
+
+        listDeleteElement.onclick = e => deleteList();
+
+        selectElement.onchange = e => {
+          listIndex = e.target.selectedIndex;
+          loadList(e.target.value);
+        };
+        updateToolbar();
+      }
+      function createSelector() {
+        while (selectElement.firstChild) {
+          selectElement.removeChild(selectElement.firstChild);
+        }
+        lists.forEach(l =>
+          selectElement.add(
+            createOption(
+              l.name +
+                " (" +
+                l.count +
+                (l.count === 1 ? " item" : " items") +
+                ")",
+              l.id
+            )
+          )
+        );
+        selectElement.selectedIndex = listIndex;
+      }
+      function updateSelector() {
+        var count = Object.keys(selectedHash).length;
+        selectElement.item(selectElement.selectedIndex).innerText =
+          listName + " (" + count + (count === 1 ? " item" : " items") + ")";
+      }
+      function createOption(name, value) {
+        var opt = document.createElement("option");
+        opt.setAttribute("value", value);
+        opt.innerText = name;
+        return opt;
+      }
+      function updateToolbar() {
+        var countElement = document
+          .getElementsByClassName("list-count")
+          .item(0);
+        var listElement = document.getElementsByClassName("list-items").item(0);
+        var count = Object.keys(selectedHash).length;
+        listClearElement.classList.add("hidden");
+        if (count > 0) {
+          listClearElement.classList.remove("hidden");
+        }
+        countElement.innerText =
+          count !== 1 ? count + " items" : count + " item";
+        while (listElement.firstChild) {
+          listElement.removeChild(listElement.firstChild);
+        }
+        Object.keys(selectedHash).forEach(k => {
+          var id = selectedHash[k];
+          var thumb = document.createElement("li");
+          var img = new Image();
+          // img.src = "/images/scaled/" + id + ".jpg"
+          img.src = "https://dpla-cvtest.s3.amazonaws.com/" + id + ".jpg";
+          img.setAttribute("data-id", id);
+          thumb.classList.add("list-item");
+          thumb.appendChild(img);
+          listElement.appendChild(thumb);
+          thumb.onclick = e => {
+            var thumbId = e.target.getAttribute("data-id");
+            window.scrollTo(
+              0,
+              document.getElementById("item-" + thumbId).offsetTop
+            );
+          };
+        });
+      }
+      function init() {
+        initToolbar();
+        var xmlhttp = new XMLHttpRequest(),
+          method = "GET",
+          url = "./colors-v4-tSNE-gridwide-points.json";
+        xmlhttp.open(method, url, true);
+        xmlhttp.onload = function(data) {
+          createObserver();
+          points = JSON.parse(data.target.response);
+          points.sort((a, b) =>
+            a.point[1] < b.point[1]
+              ? -1
+              : a.point[1] > b.point[1]
+              ? 1
+              : a.point[0] < b.point[0]
+              ? -1
+              : a.point[0] > b.point[0]
+              ? 1
+              : 0
+          );
+          points.forEach(p => createThumbnail(p));
+        };
+        xmlhttp.send();
+      }
+      function createObserver() {
+        intersectionObserver = new IntersectionObserver(
+          (entries, self) => {
+            entries.forEach(e => {
+              if (e.isIntersecting) {
+                showImage(e.target);
+              } else {
+                hideImage(e.target);
+              }
+            });
+          },
+          { root: null, threshold: 0.1, rootMargin: "20px" }
+        );
+      }
+      function createThumbnail(p) {
+        var item = document.createElement("div");
+        // var url = p.path.replace("/Users/mga/Documents/website/cv", "");
+        var url = p.path.replace(
+          "/Users/mga/Documents/website/cv/images/scaled",
+          "https://dpla-cvtest.s3.amazonaws.com"
+        );
+        // var id = url.replace("/images/scaled/", "").replace(".jpg", "")
+        var id = url
+          .replace("https://dpla-cvtest.s3.amazonaws.com/", "")
+          .replace(".jpg", "");
+        var meta = metadata[id];
+        item.classList.add("item");
+        item.setAttribute("data-url", url);
+        item.setAttribute("data-id", id);
+        item.setAttribute("id", "item-" + id);
+        item.setAttribute("data-point", p.point.toString());
+        var itemImg = new Image();
+        itemImg.setAttribute("data-src", url);
+        var imgLink = document.createElement("a");
+        imgLink.setAttribute("href", "#item-" + id);
+        imgLink.classList.add("item-link");
+        imgLink.onclick = imageLinkClick;
+        imgLink.appendChild(itemImg);
+        item.appendChild(imgLink);
+        var itemMeta = document.createElement("div");
+        itemMeta.classList.add("item-metadata");
+        var checkbox = document.createElement("input");
+        checkbox.setAttribute("type", "checkbox");
+        checkbox.setAttribute("data-id", id);
+        checkbox.setAttribute("id", "checkbox-" + id);
+        checkbox.setAttribute("data-point", p.point.toString());
+        if (Object.values(selectedHash).indexOf(id) !== -1) {
+          checkbox.checked = true;
+        }
+        var label = document.createElement("label");
+        label.setAttribute("for", "checkbox-" + id);
+        label.classList.add("item-label");
+        var span = document.createElement("span");
+        span.innerText = "Add to list";
+        label.appendChild(checkbox);
+        label.appendChild(span);
+        itemMeta.appendChild(label);
+        checkbox.onclick = label.onclick = checkItem;
+        var title = document.createElement("h2");
+        title.innerText = meta["sourceResource.title"];
+        itemMeta.appendChild(title);
+        var provider = document.createElement("p");
+        provider.innerText = meta["provider.name"];
+        itemMeta.appendChild(provider);
+        if (meta["sourceResource.date"]) {
+          var date = document.createElement("p");
+          date.classList.add("date");
+          date.innerText = Array.isArray(meta["sourceResource.date"])
+            ? meta["sourceResource.date"][0].displayDate
+            : meta["sourceResource.date"].displayDate;
+          itemMeta.appendChild(date);
+        }
+        item.appendChild(itemMeta);
+        grid.appendChild(item);
+        item.onclick = gridItemClick;
+        intersectionObserver.observe(item);
+        // imagexy[p.point[0] + "," + p.point[1]] = p.path
+      }
+      function imageLinkClick(e) {
+        e.preventDefault();
+      }
+      function showImage(target) {
+        var img = target.childNodes.item(0).childNodes.item(0);
+        img.setAttribute("src", img.getAttribute("data-src"));
+      }
+      function hideImage(target) {
+        var img = target.childNodes.item(0);
+        img.setAttribute("src", "");
+      }
+      function addCell(id) {
+        if (selectedHash[id]) return;
+        selectedHash[id] = id;
+        lists[listIndex].count++;
+        saveList();
+      }
+      function saveList() {
+        var savedList = { listName: listName, selectedHash: selectedHash };
+        localforage.setItem(listId, savedList);
+        updateName();
+        updateToolbar();
+        updateSelector();
+        drawSelection();
+      }
+      function removeCell(cell) {
+        var id = selectedHash[cell];
+        delete selectedHash[cell];
+        if (id) clearCell(id);
+        saveList();
+      }
+      function checkItem(e) {
+        e.stopPropagation(); // prevents from opening/closing expansion
+        var point = this.getAttribute("data-point");
+        var id = this.getAttribute("data-id");
+        var selected = this.checked;
+        // console.log(this, point, id, selected)
+        if (selected) {
+          addCell(id);
+        } else {
+          removeCell(id);
+        }
+      }
+      function clearSelection(save = true) {
+        Object.values(selectedHash).forEach(id => {
+          clearCell(id);
+        });
+        selectedHash = {};
+        if (lists[listIndex]) lists[listIndex].count = 0;
+        if (save) saveList();
+      }
+      function clearCell(id) {
+        var item = document.getElementById("checkbox-" + id);
+        if (item) item.checked = false;
+        if (lists[listIndex]) lists[listIndex].count--;
+      }
+      function drawSelection() {
+        Object.values(selectedHash).forEach(id => {
+          var item = document.getElementById("checkbox-" + id);
+          if (item) item.checked = true;
+        });
+      }
+      function getMetadata(id) {
+        var item = metadata[id];
+        metadataElement.innerHTML = "";
+        var title = document.createElement("h3");
+        title.classList.add("title");
+        title.innerHTML = item["sourceResource.title"];
+        metadataElement.appendChild(title);
+        // if (item["sourceResource.description"]) {
+        //   var description = document.createElement("p")
+        //   description.innerHTML = item["sourceResource.description"];
+        //   metadataElement.appendChild(description)
+        // }
+        if (item["sourceResource.date"]) {
+          var date = document.createElement("p");
+          date.classList.add("date");
+          date.innerText = Array.isArray(item["sourceResource.date"])
+            ? item["sourceResource.date"][0].displayDate
+            : item["sourceResource.date"].displayDate;
+          metadataElement.appendChild(date);
+        }
+        var provider = document.createElement("a");
+        provider.classList.add("provider");
+        provider.innerHTML = item["provider.name"];
+        provider.setAttribute("href", item.isShownAt);
+        provider.setAttribute("target", "_blank");
+        metadataElement.appendChild(provider);
+        if (item["sourceResource.subject.name"]) {
+          var subjects = document.createElement("ul");
+          subjects.classList.add("subjects");
+          item["sourceResource.subject.name"].forEach(s => {
+            var subject = document.createElement("li");
+            subject.innerHTML = s;
+            subjects.appendChild(subject);
+          });
+          metadataElement.appendChild(subjects);
+        }
+        // var meta = metadata[id]
+        // var xmlhttp = new XMLHttpRequest(),
+        //   method = 'GET',
+        //   url = "https://dp.la/api/dpla/items?fields=sourceResource.description,sourceResource.date,sourceResource.title,sourceResource.subject.name,provider.name&id=" + id;
+
+        // xmlhttp.open(method, url, true);
+        // xmlhttp.onload = function (data) {
+        //   var item = JSON.parse(data.target.response).docs[0]
+        //   // console.log(item)
+        // };
+        // xmlhttp.send()
+      }
+      function loadColors(file) {
+        var xmlhttp = new XMLHttpRequest(),
+          method = "GET",
+          url = file;
+
+        xmlhttp.open(method, url, true);
+        xmlhttp.onload = function(data) {
+          JSON.parse(data.target.response).imgdata[1].clusters.cluster.forEach(
+            (c, index) => {
+              expansionElement
+                .getElementsByTagName("li")
+                [index].setAttribute(
+                  "style",
+                  "width: " +
+                    c[0].f * 100 +
+                    "%; background-color: " +
+                    c[2].hex[0].hex +
+                    ";"
+                );
+            }
+          );
+        };
+        xmlhttp.send();
+      }
+      /**
+       * Fast UUID generator, RFC4122 version 4 compliant.
+       * @author Jeff Ward (jcward.com).
+       * @license MIT license
+       * @link http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript/21963136#21963136
+       **/
+      var UUID = (function() {
+        var self = {};
+        var lut = [];
+        for (var i = 0; i < 256; i++) {
+          lut[i] = (i < 16 ? "0" : "") + i.toString(16);
+        }
+        self.generate = function() {
+          var d0 = (Math.random() * 0xffffffff) | 0;
+          var d1 = (Math.random() * 0xffffffff) | 0;
+          var d2 = (Math.random() * 0xffffffff) | 0;
+          var d3 = (Math.random() * 0xffffffff) | 0;
+          return (
+            lut[d0 & 0xff] +
+            lut[(d0 >> 8) & 0xff] +
+            lut[(d0 >> 16) & 0xff] +
+            lut[(d0 >> 24) & 0xff] +
+            "-" +
+            lut[d1 & 0xff] +
+            lut[(d1 >> 8) & 0xff] +
+            "-" +
+            lut[((d1 >> 16) & 0x0f) | 0x40] +
+            lut[(d1 >> 24) & 0xff] +
+            "-" +
+            lut[(d2 & 0x3f) | 0x80] +
+            lut[(d2 >> 8) & 0xff] +
+            "-" +
+            lut[(d2 >> 16) & 0xff] +
+            lut[(d2 >> 24) & 0xff] +
+            lut[d3 & 0xff] +
+            lut[(d3 >> 8) & 0xff] +
+            lut[(d3 >> 16) & 0xff] +
+            lut[(d3 >> 24) & 0xff]
+          );
+        };
+        return self;
+      })();
+    </script>
+  </body>
 </html>
