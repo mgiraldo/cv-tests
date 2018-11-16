@@ -12,9 +12,17 @@ use the [`data/download.sh`](data/download.sh) script to get all the thumbnails.
 
 ## [grid viewer demo](https://mgiraldo.github.io/cv-tests/output-ml4a/viewer-grid.html)
 
+browse the posters in a grid viewer organized by visual similarity in a layout inspired by google images although this one makes use of css grid. works best on larger screens.
+
+uses [localForage](https://localforage.github.io/localForage/) for list management.
+
 ## [serendipity viewer demo](https://mgiraldo.github.io/cv-tests/output-ml4a/viewer-serendipity.html)
 
-uses [localForage](https://localforage.github.io/localForage/) for list management
+this viewer aims to allow serendipitous exploration of the posters. it chooses a random image from the set followed by other images from very similar to very dissimilar. it is somewhat inspired by the ios photos application, where the swipe-up gesture in an image displays related photos.
+
+## [reverse image search service code](https://github.com/mgiraldo/cv-tests/tree/master/reverse)
+
+skeleton service that contains the trained model and can be used to find the similarity of any user-submitted image to the images in the set. more information is provided in that folder's README.
 
 ## see also
 
