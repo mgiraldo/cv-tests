@@ -20,7 +20,7 @@ uses [localForage](https://localforage.github.io/localForage/) for list manageme
 
 this viewer aims to allow serendipitous exploration of the posters. it chooses a random image from the set followed by other images from very similar to very dissimilar. it is somewhat inspired by the ios photos application, where the swipe-up gesture in an image displays related photos.
 
-## [reverse image search service code](https://github.com/mgiraldo/cv-tests/tree/master/reverse)
+## [reverse image search web service](https://github.com/mgiraldo/cv-tests/tree/master/reverse)
 
 skeleton service that contains the trained model and can be used to find the similarity of any user-submitted image to the images in the set. more information is provided in that folder's README.
 
